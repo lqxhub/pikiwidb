@@ -14,7 +14,7 @@ namespace pikiwidb {
 void CmdWorkThreadPoolWorker::Work() {
   while (running_) {
     LoadWork();
-    for (const auto &task : selfTask_) {
+    for (const auto &task : self_task_) {
       if (task->Client()->State() != ClientState::kOK) {  // the client is closed
         continue;
       }
@@ -38,7 +38,7 @@ void CmdWorkThreadPoolWorker::Work() {
       task->Run(cmdPtr);
       g_pikiwidb->PushWriteTask(task->Client());
     }
-    selfTask_.clear();
+    self_task_.clear();
   }
   INFO("worker [{}] goodbye...", name_);
 }
@@ -46,49 +46,49 @@ void CmdWorkThreadPoolWorker::Work() {
 void CmdWorkThreadPoolWorker::Stop() { running_ = false; }
 
 void CmdFastWorker::LoadWork() {
-  std::unique_lock lock(pool_->fastMutex_);
-  while (pool_->fastTasks_.empty()) {
+  std::unique_lock lock(pool_->fast_mutex_);
+  while (pool_->fast_tasks_.empty()) {
     if (!running_) {
       return;
     }
-    pool_->fastCondition_.wait(lock);
+    pool_->fast_condition_.wait(lock);
   }
 
-  if (pool_->fastTasks_.empty()) {
+  if (pool_->fast_tasks_.empty()) {
     return;
   }
-  const auto num = std::min(static_cast<int>(pool_->fastTasks_.size()), onceTask_);
-  std::move(pool_->fastTasks_.begin(), pool_->fastTasks_.begin() + num, std::back_inserter(selfTask_));
-  pool_->fastTasks_.erase(pool_->fastTasks_.begin(), pool_->fastTasks_.begin() + num);
+  const auto num = std::min(static_cast<int>(pool_->fast_tasks_.size()), once_task_);
+  std::move(pool_->fast_tasks_.begin(), pool_->fast_tasks_.begin() + num, std::back_inserter(self_task_));
+  pool_->fast_tasks_.erase(pool_->fast_tasks_.begin(), pool_->fast_tasks_.begin() + num);
 }
 
 void CmdSlowWorker::LoadWork() {
   {
-    std::unique_lock lock(pool_->slowMutex_);
-    while (pool_->slowTasks_.empty() && loopMore_) {  // loopMore is used to get the fast worker
+    std::unique_lock lock(pool_->slow_mutex_);
+    while (pool_->slow_tasks_.empty() && loop_more_) {  // loopMore is used to get the fast worker
       if (!running_) {
         return;
       }
-      pool_->slowCondition_.wait_for(lock, std::chrono::milliseconds(waitTime_));
-      loopMore_ = false;
+      pool_->slow_condition_.wait_for(lock, std::chrono::milliseconds(wait_time_));
+      loop_more_ = false;
     }
 
-    const auto num = std::min(static_cast<int>(pool_->slowTasks_.size()), onceTask_);
+    const auto num = std::min(static_cast<int>(pool_->slow_tasks_.size()), once_task_);
     if (num > 0) {
-      std::move(pool_->slowTasks_.begin(), pool_->slowTasks_.begin() + num, std::back_inserter(selfTask_));
-      pool_->slowTasks_.erase(pool_->slowTasks_.begin(), pool_->slowTasks_.begin() + num);
+      std::move(pool_->slow_tasks_.begin(), pool_->slow_tasks_.begin() + num, std::back_inserter(self_task_));
+      pool_->slow_tasks_.erase(pool_->slow_tasks_.begin(), pool_->slow_tasks_.begin() + num);
       return;  // If the slow task is obtained, the fast task is no longer obtained
     }
   }
 
   {
-    std::unique_lock lock(pool_->fastMutex_);
-    loopMore_ = true;
+    std::unique_lock lock(pool_->fast_mutex_);
+    loop_more_ = true;
 
-    const auto num = std::min(static_cast<int>(pool_->fastTasks_.size()), onceTask_);
+    const auto num = std::min(static_cast<int>(pool_->fast_tasks_.size()), once_task_);
     if (num > 0) {
-      std::move(pool_->fastTasks_.begin(), pool_->fastTasks_.begin() + num, std::back_inserter(selfTask_));
-      pool_->fastTasks_.erase(pool_->fastTasks_.begin(), pool_->fastTasks_.begin() + num);
+      std::move(pool_->fast_tasks_.begin(), pool_->fast_tasks_.begin() + num, std::back_inserter(self_task_));
+      pool_->fast_tasks_.erase(pool_->fast_tasks_.begin(), pool_->fast_tasks_.begin() + num);
     }
   }
 }

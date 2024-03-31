@@ -18,7 +18,7 @@ namespace pikiwidb {
 class CmdWorkThreadPoolWorker {
  public:
   explicit CmdWorkThreadPoolWorker(CmdThreadPool *pool, int onceTask, std::string name)
-      : pool_(pool), onceTask_(onceTask), name_(std::move(name)) {
+      : pool_(pool), once_task_(onceTask), name_(std::move(name)) {
     cmd_table_manager_.InitCmdTable();
   }
 
@@ -32,9 +32,9 @@ class CmdWorkThreadPoolWorker {
   virtual ~CmdWorkThreadPoolWorker() = default;
 
  protected:
-  std::vector<std::shared_ptr<CmdThreadPoolTask>> selfTask_;  // the task that the worker get from the thread pool
-  CmdThreadPool *pool_;
-  const int onceTask_ = 0;  // the max task num that the worker can get from the thread pool
+  std::vector<std::shared_ptr<CmdThreadPoolTask>> self_task_;  // the task that the worker get from the thread pool
+  CmdThreadPool *pool_ = nullptr;
+  const int once_task_ = 0;  // the max task num that the worker can get from the thread pool
   const std::string name_;
   bool running_ = true;
 
@@ -60,8 +60,8 @@ class CmdSlowWorker : public CmdWorkThreadPoolWorker {
   void LoadWork() override;
 
  private:
-  bool loopMore_ = false;  // When the slow queue is empty, try to get the fast queue
-  int waitTime_ = 200;     // When the slow queue is empty, wait 200 ms to check again
+  bool loop_more_ = false;  // When the slow queue is empty, try to get the fast queue
+  int wait_time_ = 200;     // When the slow queue is empty, wait 200 ms to check again
 };
 
 }  // namespace pikiwidb

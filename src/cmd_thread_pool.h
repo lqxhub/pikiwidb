@@ -48,7 +48,7 @@ class CmdThreadPool {
 
   explicit CmdThreadPool(std::string name);
 
-  pstd::Status Init(int fastThread, int slowThread, std::string name);
+  pstd::Status Init(int fast_thread, int slow_thread, std::string name);
 
   // start the thread pool
   void Start();
@@ -63,31 +63,32 @@ class CmdThreadPool {
   void SubmitSlow(const std::shared_ptr<CmdThreadPoolTask> &runner);
 
   // get the fast thread num
-  inline int FastThreadNum() const { return fastThreadNum_; };
+  inline int FastThreadNum() const { return fast_thread_num_; };
 
   // get the slow thread num
-  inline int SlowThreadNum() const { return slowThreadNum_; };
+  inline int SlowThreadNum() const { return slow_thread_num_; };
 
   // get the thread pool size
-  inline int ThreadPollSize() const { return fastThreadNum_ + slowThreadNum_; };
+  inline int ThreadPollSize() const { return fast_thread_num_ + slow_thread_num_; };
 
   ~CmdThreadPool();
 
  private:
   void DoStop();
 
-  std::deque<std::shared_ptr<CmdThreadPoolTask>> fastTasks_;  // fast task queue
-  std::deque<std::shared_ptr<CmdThreadPoolTask>> slowTasks_;  // slow task queue
+ private:
+  std::deque<std::shared_ptr<CmdThreadPoolTask>> fast_tasks_;  // fast task queue
+  std::deque<std::shared_ptr<CmdThreadPoolTask>> slow_tasks_;  // slow task queue
 
   std::vector<std::thread> threads_;
   std::vector<std::shared_ptr<CmdWorkThreadPoolWorker>> workers_;
   std::string name_;  // thread pool name
-  int fastThreadNum_ = 0;
-  int slowThreadNum_ = 0;
-  std::mutex fastMutex_;
-  std::condition_variable fastCondition_;
-  std::mutex slowMutex_;
-  std::condition_variable slowCondition_;
+  int fast_thread_num_ = 0;
+  int slow_thread_num_ = 0;
+  std::mutex fast_mutex_;
+  std::condition_variable fast_condition_;
+  std::mutex slow_mutex_;
+  std::condition_variable slow_condition_;
   std::atomic_bool stopped_ = false;
 };
 

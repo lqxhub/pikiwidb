@@ -17,27 +17,27 @@ std::shared_ptr<PClient> CmdThreadPoolTask::Client() { return client_; }
 
 CmdThreadPool::CmdThreadPool(std::string name) : name_(std::move(name)) {}
 
-pstd::Status CmdThreadPool::Init(int fastThread, int slowThread, std::string name) {
-  if (fastThread <= 0) {
+pstd::Status CmdThreadPool::Init(int fast_thread, int slow_thread, std::string name) {
+  if (fast_thread <= 0) {
     return pstd::Status::InvalidArgument("thread num must be positive");
   }
   name_ = std::move(name);
-  fastThreadNum_ = fastThread;
-  slowThreadNum_ = slowThread;
-  threads_.reserve(fastThreadNum_ + slowThreadNum_);
-  workers_.reserve(fastThreadNum_ + slowThreadNum_);
+  fast_thread_num_ = fast_thread;
+  slow_thread_num_ = slow_thread;
+  threads_.reserve(fast_thread_num_ + slow_thread_num_);
+  workers_.reserve(fast_thread_num_ + slow_thread_num_);
   return pstd::Status::OK();
 }
 
 void CmdThreadPool::Start() {
-  for (int i = 0; i < fastThreadNum_; ++i) {
+  for (int i = 0; i < fast_thread_num_; ++i) {
     auto fastWorker = std::make_shared<CmdFastWorker>(this, 2, "fast worker" + std::to_string(i));
     std::thread thread(&CmdWorkThreadPoolWorker::Work, fastWorker);
     threads_.emplace_back(std::move(thread));
     workers_.emplace_back(fastWorker);
     INFO("fast worker [{}] starting ...", i);
   }
-  for (int i = 0; i < slowThreadNum_; ++i) {
+  for (int i = 0; i < slow_thread_num_; ++i) {
     auto slowWorker = std::make_shared<CmdSlowWorker>(this, 2, "slow worker" + std::to_string(i));
     std::thread thread(&CmdWorkThreadPoolWorker::Work, slowWorker);
     threads_.emplace_back(std::move(thread));
@@ -47,15 +47,15 @@ void CmdThreadPool::Start() {
 }
 
 void CmdThreadPool::SubmitFast(const std::shared_ptr<CmdThreadPoolTask> &runner) {
-  std::unique_lock rl(fastMutex_);
-  fastTasks_.emplace_back(runner);
-  fastCondition_.notify_one();
+  std::unique_lock rl(fast_mutex_);
+  fast_tasks_.emplace_back(runner);
+  fast_condition_.notify_one();
 }
 
 void CmdThreadPool::SubmitSlow(const std::shared_ptr<CmdThreadPoolTask> &runner) {
-  std::unique_lock rl(slowMutex_);
-  slowTasks_.emplace_back(runner);
-  slowCondition_.notify_one();
+  std::unique_lock rl(slow_mutex_);
+  slow_tasks_.emplace_back(runner);
+  slow_condition_.notify_one();
 }
 
 void CmdThreadPool::Stop() { DoStop(); }
@@ -71,12 +71,12 @@ void CmdThreadPool::DoStop() {
   }
 
   {
-    std::unique_lock fl(fastMutex_);
-    fastCondition_.notify_all();
+    std::unique_lock fl(fast_mutex_);
+    fast_condition_.notify_all();
   }
   {
-    std::unique_lock sl(slowMutex_);
-    slowCondition_.notify_all();
+    std::unique_lock sl(slow_mutex_);
+    slow_condition_.notify_all();
   }
 
   for (auto &thread : threads_) {
@@ -86,8 +86,8 @@ void CmdThreadPool::DoStop() {
   }
   threads_.clear();
   workers_.clear();
-  fastTasks_.clear();
-  slowTasks_.clear();
+  fast_tasks_.clear();
+  slow_tasks_.clear();
 }
 
 CmdThreadPool::~CmdThreadPool() { DoStop(); }
