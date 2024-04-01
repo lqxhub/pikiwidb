@@ -98,6 +98,7 @@ class WorkIOThreadPool : public IOThreadPool {
  private:
   void StartWorkers() override;
 
+ private:
   std::vector<std::thread> writeThreads_;
   std::vector<std::unique_ptr<std::mutex>> writeMutex_;
   std::vector<std::unique_ptr<std::condition_variable>> writeCond_;

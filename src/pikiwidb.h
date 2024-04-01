@@ -30,7 +30,7 @@ class PikiwiDB final {
   void OnNewConnection(pikiwidb::TcpConnection* obj);
 
   //  pikiwidb::CmdTableManager& GetCmdTableManager();
-  uint32_t GetCmdID() { return ++cmdId_; };
+  uint32_t GetCmdID() { return ++cmd_id_; };
 
   void SubmitFast(const std::shared_ptr<pikiwidb::CmdThreadPoolTask>& runner) { cmd_threads_.SubmitFast(runner); }
 
@@ -52,7 +52,7 @@ class PikiwiDB final {
   pikiwidb::CmdThreadPool cmd_threads_;
   //  pikiwidb::CmdTableManager cmd_table_manager_;
 
-  uint32_t cmdId_ = 0;
+  uint32_t cmd_id_ = 0;
 };
 
 extern std::unique_ptr<PikiwiDB> g_pikiwidb;

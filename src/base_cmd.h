@@ -275,8 +275,8 @@ class BaseCmd : public std::enable_shared_from_this<BaseCmd> {
   //  std::weak_ptr<std::string> resp_;
   //  uint64_t doDuration_ = 0;
 
-  uint32_t cmdID_ = 0;
-  uint32_t aclCategory_ = 0;
+  uint32_t cmd_id_ = 0;
+  uint32_t acl_category_ = 0;
 
  private:
   // The function to be executed first before executing `DoCmd`
