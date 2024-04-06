@@ -27,7 +27,7 @@ namespace pikiwidb {
   } while (0)
 
 // subcommand name is baseCmdName + subCmdName
-//  for example: ConfigGetCmd is the subcommand of configGet
+// for example: ConfigGetCmd is the subcommand of configGet
 #define ADD_SUB_COMMAND(group, subCmd, argc)                                                                       \
   do {                                                                                                             \
     g_pikiwidb->GetCmdObjectPool()->SetNewObjectFunc(kCmdName##group + #subCmd, []() -> std::unique_ptr<BaseCmd> { \

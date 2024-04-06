@@ -17,6 +17,8 @@ namespace pikiwidb {
 
 struct SmallObject {
   // Version, after each use, a new version number is assigned
+  SmallObject(uint64_t version, std::string key, std::unique_ptr<BaseCmd> object)
+      : version_(version), key_(std::move(key)), object_(std::move(object)) {}
   uint64_t version_;
   std::string key_;
   std::unique_ptr<BaseCmd> object_;
