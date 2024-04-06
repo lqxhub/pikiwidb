@@ -14,9 +14,9 @@ namespace pikiwidb {
 
 extern PConfig g_config;
 
-class CmdConfig : public BaseCmdGroup {
+class ConfigCmd : public BaseCmdGroup {
  public:
-  CmdConfig(const std::string& name, int arity);
+  ConfigCmd(const std::string& name, int arity);
 
   bool HasSubCommand() const override;
 
@@ -24,14 +24,12 @@ class CmdConfig : public BaseCmdGroup {
   bool DoInitial(PClient* client) override { return true; };
 
  private:
-  //  std::vector<std::string> subCmd_;
-
   void DoCmd(PClient* client) override{};
 };
 
-class CmdConfigGet : public BaseCmd {
+class ConfigGetCmd : public BaseCmd {
  public:
-  CmdConfigGet(const std::string& name, int16_t arity);
+  ConfigGetCmd(const std::string& name, int16_t arity);
 
  protected:
   bool DoInitial(PClient* client) override;
@@ -40,9 +38,9 @@ class CmdConfigGet : public BaseCmd {
   void DoCmd(PClient* client) override;
 };
 
-class CmdConfigSet : public BaseCmd {
+class ConfigSetCmd : public BaseCmd {
  public:
-  CmdConfigSet(const std::string& name, int16_t arity);
+  ConfigSetCmd(const std::string& name, int16_t arity);
 
  protected:
   bool DoInitial(PClient* client) override;

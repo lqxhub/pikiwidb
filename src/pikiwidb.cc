@@ -14,6 +14,7 @@
 #include <iostream>
 #include <thread>
 
+#include "cmd_object_pool.h"
 #include "log.h"
 #include "rocksdb/db.h"
 
@@ -29,6 +30,8 @@
 #include "pstd_util.h"
 
 std::unique_ptr<PikiwiDB> g_pikiwidb;
+
+// std::unique_ptr<pikiwidb::CmdObjectPool> g_cmd_object_pool;
 
 static void IntSigHandle(const int sig) {
   INFO("Catch Signal {}, cleanup...", sig);
@@ -248,6 +251,9 @@ bool PikiwiDB::Init() {
 
   //  cmd_table_manager_.InitCmdTable();
 
+  cmd_object_pool_ = std::make_shared<CmdObjectPool>();
+  cmd_object_pool_->InitCommand();
+
   return true;
 }
 
@@ -310,6 +316,7 @@ static void closeStd() {
 int main(int ac, char* av[]) {
   [[maybe_unused]] rocksdb::DB* db;
   g_pikiwidb = std::make_unique<PikiwiDB>();
+  //  g_cmd_object_pool = std::make_unique<pikiwidb::CmdObjectPool>();
 
   if (!g_pikiwidb->ParseArgs(ac - 1, av + 1)) {
     Usage();

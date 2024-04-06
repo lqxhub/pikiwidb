@@ -54,7 +54,6 @@ bool BaseCmd::HasFlag(uint32_t flag) const { return flag_ & flag; }
 void BaseCmd::SetFlag(uint32_t flag) { flag_ |= flag; }
 void BaseCmd::ResetFlag(uint32_t flag) { flag_ &= ~flag; }
 bool BaseCmd::HasSubCommand() const { return false; }
-BaseCmd* BaseCmd::GetSubCmd(const std::string& cmdName) { return nullptr; }
 uint32_t BaseCmd::AclCategory() const { return acl_category_; }
 void BaseCmd::AddAclCategory(uint32_t aclCategory) { acl_category_ |= aclCategory; }
 std::string BaseCmd::Name() const { return name_; }
@@ -67,22 +66,22 @@ uint32_t BaseCmd::GetCmdID() const { return cmd_id_; }
 BaseCmdGroup::BaseCmdGroup(const std::string& name, uint32_t flag) : BaseCmdGroup(name, -2, flag) {}
 BaseCmdGroup::BaseCmdGroup(const std::string& name, int16_t arity, uint32_t flag) : BaseCmd(name, arity, flag, 0) {}
 
-void BaseCmdGroup::AddSubCmd(std::unique_ptr<BaseCmd> cmd) { subCmds_[cmd->Name()] = std::move(cmd); }
-
-BaseCmd* BaseCmdGroup::GetSubCmd(const std::string& cmdName) {
-  auto subCmd = subCmds_.find(cmdName);
-  if (subCmd == subCmds_.end()) {
-    return nullptr;
-  }
-  return subCmd->second.get();
-}
+// void BaseCmdGroup::AddSubCmd(std::unique_ptr<BaseCmd> cmd) { subCmds_[cmd->Name()] = std::move(cmd); }
+//
+// BaseCmd* BaseCmdGroup::GetSubCmd(const std::string& cmdName) {
+//   auto subCmd = subCmds_.find(cmdName);
+//   if (subCmd == subCmds_.end()) {
+//     return nullptr;
+//   }
+//   return subCmd->second.get();
+// }
 
 bool BaseCmdGroup::DoInitial(PClient* client) {
   client->SetSubCmdName(client->argv_[1]);
-  if (!subCmds_.contains(client->SubCmdName())) {
-    client->SetRes(CmdRes::kSyntaxErr, client->argv_[0] + " unknown subcommand for '" + client->SubCmdName() + "'");
-    return false;
-  }
+  //  if (!subCmds_.contains(client->SubCmdName())) {
+  //    client->SetRes(CmdRes::kSyntaxErr, client->argv_[0] + " unknown subcommand for '" + client->SubCmdName() + "'");
+  //    return false;
+  //  }
   return true;
 }
 

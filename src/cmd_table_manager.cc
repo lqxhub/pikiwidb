@@ -33,10 +33,10 @@ void CmdTableManager::InitCmdTable() {
   std::unique_lock wl(mutex_);
 
   // admin
-  auto configPtr = std::make_unique<CmdConfig>(kCmdNameConfig, -2);
-  configPtr->AddSubCmd(std::make_unique<CmdConfigGet>("get", -3));
-  configPtr->AddSubCmd(std::make_unique<CmdConfigSet>("set", -4));
-  cmds_->insert(std::make_pair(kCmdNameConfig, std::move(configPtr)));
+  //  auto configPtr = std::make_unique<CmdConfig>(kCmdNameConfig, -2);
+  //  configPtr->AddSubCmd(std::make_unique<CmdConfigGet>("get", -3));
+  //  configPtr->AddSubCmd(std::make_unique<CmdConfigSet>("set", -4));
+  //  cmds_->insert(std::make_pair(kCmdNameConfig, std::move(configPtr)));
 
   // server
   ADD_COMMAND(Flushdb, 1);
@@ -158,12 +158,12 @@ std::pair<BaseCmd*, CmdRes::CmdRet> CmdTableManager::GetCommand(const std::strin
     return std::pair(nullptr, CmdRes::kSyntaxErr);
   }
 
-  if (cmd->second->HasSubCommand()) {
-    if (client->argv_.size() < 2) {
-      return std::pair(nullptr, CmdRes::kInvalidParameter);
-    }
-    return std::pair(cmd->second->GetSubCmd(client->argv_[1]), CmdRes::kSyntaxErr);
-  }
+  //  if (cmd->second->HasSubCommand()) {
+  //    if (client->argv_.size() < 2) {
+  //      return std::pair(nullptr, CmdRes::kInvalidParameter);
+  //    }
+  //    return std::pair(cmd->second->GetSubCmd(client->argv_[1]), CmdRes::kSyntaxErr);
+  //  }
   return std::pair(cmd->second.get(), CmdRes::kSyntaxErr);
 }
 

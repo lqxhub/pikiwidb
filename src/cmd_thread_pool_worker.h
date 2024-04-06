@@ -10,8 +10,12 @@
 #include <memory>
 #include <utility>
 
+#include "cmd_object_pool.h"
 #include "cmd_table_manager.h"
 #include "cmd_thread_pool.h"
+#include "pikiwidb.h"
+
+extern std::unique_ptr<PikiwiDB> g_pikiwidb;
 
 namespace pikiwidb {
 
@@ -19,7 +23,7 @@ class CmdWorkThreadPoolWorker {
  public:
   explicit CmdWorkThreadPoolWorker(CmdThreadPool *pool, int onceTask, std::string name)
       : pool_(pool), once_task_(onceTask), name_(std::move(name)) {
-    cmd_table_manager_.InitCmdTable();
+    cmd_object_pool_ = g_pikiwidb->GetCmdObjectPool();
   }
 
   void Work();
@@ -38,7 +42,7 @@ class CmdWorkThreadPoolWorker {
   const std::string name_;
   bool running_ = true;
 
-  pikiwidb::CmdTableManager cmd_table_manager_;
+  std::shared_ptr<CmdObjectPool> cmd_object_pool_;
 };
 
 // fast worker

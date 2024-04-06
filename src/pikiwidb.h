@@ -5,6 +5,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#include "cmd_object_pool.h"
 #include "cmd_table_manager.h"
 #include "cmd_thread_pool.h"
 #include "common.h"
@@ -42,6 +43,8 @@ class PikiwiDB final {
 
   void PushWriteTask(const std::shared_ptr<pikiwidb::PClient>& client) { worker_threads_.PushWriteTask(client); }
 
+  inline std::shared_ptr<pikiwidb::CmdObjectPool> GetCmdObjectPool() { return cmd_object_pool_; }
+
  public:
   PString cfg_file_;
   uint16_t port_{0};
@@ -58,6 +61,7 @@ class PikiwiDB final {
   pikiwidb::CmdThreadPool cmd_threads_;
   //  pikiwidb::CmdTableManager cmd_table_manager_;
 
+  std::shared_ptr<pikiwidb::CmdObjectPool> cmd_object_pool_;
   uint32_t cmd_id_ = 0;
 };
 

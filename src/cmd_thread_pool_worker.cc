@@ -7,18 +7,18 @@
 
 #include "cmd_thread_pool_worker.h"
 #include "log.h"
-#include "pikiwidb.h"
 
 namespace pikiwidb {
 
 void CmdWorkThreadPoolWorker::Work() {
+  CmdObjectPool::local_pool = std::make_unique<std::vector<SmallObject>>();
   while (running_) {
     LoadWork();
     for (const auto &task : self_task_) {
       if (task->Client()->State() != ClientState::kOK) {  // the client is closed
         continue;
       }
-      auto [cmdPtr, ret] = cmd_table_manager_.GetCommand(task->CmdName(), task->Client().get());
+      auto [cmdPtr, ret] = cmd_object_pool_->GetCommand(task->CmdName(), task->Client().get());
 
       if (!cmdPtr) {
         if (ret == CmdRes::kInvalidParameter) {
@@ -35,8 +35,9 @@ void CmdWorkThreadPoolWorker::Work() {
         g_pikiwidb->PushWriteTask(task->Client());
         continue;
       }
-      task->Run(cmdPtr);
+      task->Run(cmdPtr.get());
       g_pikiwidb->PushWriteTask(task->Client());
+      cmd_object_pool_->PutObject(cmdPtr->Name(), std::move(cmdPtr));
     }
     self_task_.clear();
   }
