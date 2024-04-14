@@ -18,8 +18,8 @@ namespace pikiwidb {
 struct SmallObject {
   // Version, after each use, a new version number is assigned
   SmallObject(uint64_t version, std::string key, std::unique_ptr<BaseCmd> object)
-      : version_(version), key_(std::move(key)), object_(std::move(object)) {}
-  uint64_t version_;
+      : count_(version), key_(std::move(key)), object_(std::move(object)) {}
+  uint64_t count_;
   std::string key_;
   std::unique_ptr<BaseCmd> object_;
 };
@@ -49,8 +49,8 @@ class CmdObjectPool {
   // get the command object from the object pool
   std::pair<std::unique_ptr<BaseCmd>, CmdRes::CmdRet> GetCommand(const std::string &cmdName, PClient *client);
 
-  thread_local static std::unique_ptr<std::vector<SmallObject>> local_pool;
-  thread_local static uint64_t counter;
+  thread_local static std::unique_ptr<std::vector<SmallObject>> tl_local_pool;
+  thread_local static uint64_t tl_counter;
 
  private:
   // get the object from the global pool
@@ -77,6 +77,10 @@ class CmdObjectPool {
   const uint64_t local_max_ = 10;
   // How many operations have passed, check if you need to put the extra objects back into the global pool
   const uint64_t check_rate_ = 20;
+
+  // After multiple checks, if the number of times the object is used is still 1,
+  // it is also removed from the local_pool
+  const uint64_t less_use_check_rate_ = 3;
 };
 
 }  // namespace pikiwidb

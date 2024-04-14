@@ -20,6 +20,10 @@ extern std::unique_ptr<PikiwiDB> g_pikiwidb;
 
 namespace pikiwidb {
 
+// thread_local variable
+thread_local std::unique_ptr<std::vector<SmallObject>> CmdObjectPool::tl_local_pool = nullptr;
+thread_local uint64_t CmdObjectPool::tl_counter = 0;
+
 #define ADD_COMMAND(cmd, argc)                                                                                        \
   do {                                                                                                                \
     g_pikiwidb->GetCmdObjectPool()->SetNewObjectFunc(                                                                 \
@@ -154,31 +158,25 @@ void CmdObjectPool::InitObjectPool() {
 }
 
 std::unique_ptr<BaseCmd> pikiwidb::CmdObjectPool::GetObject(const std::string &key) {
-  for (auto &obj : *local_pool) {
+  for (auto &obj : *tl_local_pool) {
     if (obj.key_ == key && obj.object_) {
+      ++obj.count_;
       return std::move(obj.object_);
     }
   }
 
-  // if you don t find it go to the global search
+  // if you don't find it go to the global search
   return GetObjectByGlobal(key);
 }
+
 void CmdObjectPool::PutObject(std::string &&key, std::unique_ptr<BaseCmd> &&v) {
   //  std::cout << std::this_thread::get_id() << " >> " << (&local_pool) << std::endl;
-  ++counter;
-  if (counter == 0) {
-    // If the version number reaches 0, reset all version numbers in localPool
-    for (auto &obj : *local_pool) {
-      obj.version_ = 0;
-    }
-    return;
-  }
+  ++tl_counter;
 
   bool needPush = true;
-  for (auto &obj : *local_pool) {
+  for (auto &obj : *tl_local_pool) {
     if (obj.key_ == key && !obj.object_) {
       // if the keys are the same and the pointer is empty
-      obj.version_ = counter;
       obj.object_ = std::move(v);
       needPush = false;
       break;
@@ -187,16 +185,19 @@ void CmdObjectPool::PutObject(std::string &&key, std::unique_ptr<BaseCmd> &&v) {
 
   if (needPush) {
     // put the used object back into localPool
-    local_pool->emplace_back(counter, std::move(key), std::move(v));
+    tl_local_pool->emplace_back(tl_counter, std::move(key), std::move(v));
   }
 
-  if (counter % check_rate_ != 0 || local_pool->size() <= local_max_) {
+  // whether to delete rarely used objects
+  bool reclaim_rarely_used = tl_counter % (check_rate_ * less_use_check_rate_) == 0;
+
+  if (tl_counter % check_rate_ != 0 || (!reclaim_rarely_used && tl_local_pool->size() <= local_max_)) {
     return;
   }
 
   // The version number is sorted from largest to smallest
-  std::sort(local_pool->begin(), local_pool->end(),
-            [](const SmallObject &a, const SmallObject &b) { return a.version_ > b.version_; });
+  std::sort(tl_local_pool->begin(), tl_local_pool->end(),
+            [](const SmallObject &a, const SmallObject &b) { return a.count_ > b.count_; });
 
   //  std::cout << "-------------------------------------------" << std::endl;
   //  for (const auto &smallObj : *localPool) {
@@ -204,13 +205,22 @@ void CmdObjectPool::PutObject(std::string &&key, std::unique_ptr<BaseCmd> &&v) {
   //  }
 
   // delete the last few
-  for (auto it = local_pool->rbegin(); it != local_pool->rend();) {
+  for (auto it = tl_local_pool->rbegin(); it != tl_local_pool->rend();) {
+    if (reclaim_rarely_used && it->count_ > 1) {
+      // If you need to delete a low frequency of use, but the current number of uses is greater than the minimum,
+      // you can jump out of the loop
+      break;
+    }
+
     PutObjectBackGlobal(it->key_, it->object_);
-    it = std::vector<SmallObject>::reverse_iterator(local_pool->erase((++it).base()));
+    it = std::vector<SmallObject>::reverse_iterator(tl_local_pool->erase((++it).base()));
 
     //    std::cout << "smallPool.size:" << local_pool->size() << " smallPool.cap:" << local_pool->capacity() <<
     //    std::endl;
-    if (local_pool->size() <= local_max_) {
+
+    if (!reclaim_rarely_used && tl_local_pool->size() <= local_max_) {
+      // If you don't need to delete the low frequency of use, and the size of the local pool is less than the maximum,
+      // you can jump out of the loop
       break;
     }
   }
@@ -223,12 +233,14 @@ void CmdObjectPool::PutObject(std::string &&key, std::unique_ptr<BaseCmd> &&v) {
 }
 
 std::unique_ptr<BaseCmd> CmdObjectPool::GetObjectByGlobal(const std::string &key) {
-  std::lock_guard l(mutex_);
-  auto it = pool_.find(key);
-  if (it != pool_.end()) {
-    std::unique_ptr<BaseCmd> obj = std::move(it->second);
-    pool_.erase(it);
-    return obj;
+  {
+    std::lock_guard l(mutex_);
+    auto it = pool_.find(key);
+    if (it != pool_.end()) {
+      std::unique_ptr<BaseCmd> obj = std::move(it->second);
+      pool_.erase(it);
+      return obj;
+    }
   }
 
   // If you can't find it, use the func function to create a corresponding object
@@ -260,8 +272,5 @@ std::pair<std::unique_ptr<BaseCmd>, CmdRes::CmdRet> CmdObjectPool::GetCommand(co
   }
   return std::pair(std::move(cmd), CmdRes::kSyntaxErr);
 }
-
-thread_local std::unique_ptr<std::vector<SmallObject>> CmdObjectPool::local_pool = nullptr;
-thread_local uint64_t CmdObjectPool::counter = 0;
 
 }  // namespace pikiwidb

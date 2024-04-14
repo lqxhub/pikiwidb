@@ -11,7 +11,7 @@
 namespace pikiwidb {
 
 void CmdWorkThreadPoolWorker::Work() {
-  CmdObjectPool::local_pool = std::make_unique<std::vector<SmallObject>>();
+  CmdObjectPool::tl_local_pool = std::make_unique<std::vector<SmallObject>>();
   while (running_) {
     LoadWork();
     for (const auto &task : self_task_) {
