@@ -24,7 +24,7 @@ void CmdWorkThreadPoolWorker::Work() {
         if (ret == CmdRes::kInvalidParameter) {
           task->Client()->SetRes(CmdRes::kInvalidParameter);
         } else {
-          task->Client()->SetRes(CmdRes::kSyntaxErr, "unknown command '" + task->CmdName() + "'");
+          task->Client()->SetRes(CmdRes::kErrOther, "unknown command '" + task->CmdName() + "'");
         }
         g_pikiwidb->PushWriteTask(task->Client());
         continue;
