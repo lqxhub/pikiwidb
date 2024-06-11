@@ -126,40 +126,46 @@ void UnboundedBuffer::Swap(UnboundedBuffer& buf) {
   std::swap(writePos_, buf.writePos_);
 }
 
+std::string UnboundedBuffer::ToString() {
+  std::string str(buffer_.begin(), buffer_.end());
+  Clear();
+  return std::move(str);
+}
+
 #if 0
 int main()
 {
-    UnboundedBuffer    buf;
-    std::size_t ret = buf.PushData("hello");
-    assert (ret == 5);
+   UnboundedBuffer    buf;
+   std::size_t ret = buf.PushData("hello");
+   assert (ret == 5);
 
-    char tmp[10];
-    ret = buf.PeekData(tmp, sizeof tmp);
-    assert(ret == 5);
-    assert(tmp[0] == 'h');
+   char tmp[10];
+   ret = buf.PeekData(tmp, sizeof tmp);
+   assert(ret == 5);
+   assert(tmp[0] == 'h');
 
-    assert(buf.IsEmpty());
+   assert(buf.IsEmpty());
 
-    ret = buf.PushData("world");
-    assert (ret == 5);
-    ret = buf.PushData("abcde");
-    assert (ret == 5);
-    ret = buf.PeekData(tmp);
-    assert(tmp[0] == 'w');
+   ret = buf.PushData("world");
+   assert (ret == 5);
+   ret = buf.PushData("abcde");
+   assert (ret == 5);
+   ret = buf.PeekData(tmp);
+   assert(tmp[0] == 'w');
 
-    buf.Clear();
-    buf.Shrink();
+   buf.Clear();
+   buf.Shrink();
 
 #  if 1
-    ret = buf.PeekData(tmp, 5);
-    if (ret == 5) {
-        assert(tmp[0] == 'a');
-        assert(tmp[1] == 'b');
-    }
+   ret = buf.PeekData(tmp, 5);
+   if (ret == 5) {
+       assert(tmp[0] == 'a');
+       assert(tmp[1] == 'b');
+   }
 #  endif
-    buf.Shrink();
+   buf.Shrink();
 
-    return 0;
+   return 0;
 }
 
 #endif
