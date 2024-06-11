@@ -9,6 +9,8 @@
 #include <vector>
 #include "memory_file.h"
 
+namespace pikiwidb {
+
 static const int SPACE = ' ';
 static const int TAB = '\t';
 static const int NEWLINE = '\n';
@@ -116,3 +118,5 @@ int main() {
   std::cout << "=====================" << std::endl;
 }
 #endif
+
+}  // namespace pikiwidb
