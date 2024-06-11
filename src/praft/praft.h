@@ -35,7 +35,7 @@ namespace pikiwidb {
 
 #define PRAFT PRaft::Instance()
 
-class EventLoop;
+// class EventLoop;
 class Binlog;
 
 enum ClusterCmdType {
@@ -127,7 +127,7 @@ class PRaft : public braft::StateMachine {
   int ProcessClusterJoinCmdResponse(PClient* client, const char* start, int len);
   int ProcessClusterRemoveCmdResponse(PClient* client, const char* start, int len);
 
-  void OnClusterCmdConnectionFailed(EventLoop*, const char* peer_ip, int port);
+  void OnClusterCmdConnectionFailed(const std::string& err);
 
   bool IsLeader() const;
   std::string GetLeaderAddress() const;

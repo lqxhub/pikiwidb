@@ -38,6 +38,8 @@ class UnboundedBuffer {
   void Clear();
   void Swap(UnboundedBuffer& buf);
 
+  std::string ToString();
+
   static const std::size_t MAX_BUFFER_SIZE;
 
  private:

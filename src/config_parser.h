@@ -16,6 +16,8 @@
 #  include <iostream>
 #endif
 
+namespace pikiwidb {
+
 class ConfigParser {
  public:
   using Data = std::map<std::string, std::vector<std::string>>;
@@ -74,3 +76,5 @@ inline T ConfigParser::GetData(const char* key, const T& default_) const {
 
   return toType<T>(it->second[0]);  // only return first value
 }
+
+}  // namespace pikiwidb
