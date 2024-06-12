@@ -47,15 +47,14 @@ void InitPointer(std::unique_ptr<T> &t) {
 }
 
 template <typename T>
-concept HasSetFdFunction =
-    requires(T t, int id, int8_t index) {
-      // If T is of pointer type, then dereference and call the member function
-      { (*t).SetFd(id) } -> std::same_as<void>;              // SetFd return type is void
-      { (*t).GetFd() } -> std::same_as<int>;                 // GetFd return type is int
-      { (*t).SetThreadIndex(index) } -> std::same_as<void>;  // SetThreadIndex return type is void
-      { (*t).GetThreadIndex() } -> std::same_as<int8_t>;     // GetThreadIndex return type is int8_t
-      //  { (*t).SetSocketAddr(addr) } -> std::same_as<void>;    // GetThreadIndex return type is int8_t
-    } || std::is_class_v<T>;  // If T is an ordinary class, the member function is called directly
+concept HasSetFdFunction = requires(T t, int id, int8_t index) {
+  // If T is of pointer type, then dereference and call the member function
+  { (*t).SetFd(id) } -> std::same_as<void>;              // SetFd return type is void
+  { (*t).GetFd() } -> std::same_as<int>;                 // GetFd return type is int
+  { (*t).SetThreadIndex(index) } -> std::same_as<void>;  // SetThreadIndex return type is void
+  { (*t).GetThreadIndex() } -> std::same_as<int8_t>;     // GetThreadIndex return type is int8_t
+  //  { (*t).SetSocketAddr(addr) } -> std::same_as<void>;    // GetThreadIndex return type is int8_t
+} || std::is_class_v<T>;  // If T is an ordinary class, the member function is called directly
 
 template <typename T>
 requires HasSetFdFunction<T>
