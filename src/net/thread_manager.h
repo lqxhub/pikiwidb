@@ -108,10 +108,7 @@ class ThreadManager {
 };
 
 template <typename T>
-requires HasSetFdFunction<T>
-ThreadManager<T>::~ThreadManager() {
-  Stop();
-}
+requires HasSetFdFunction<T> ThreadManager<T>::~ThreadManager() { Stop(); }
 
 template <typename T>
 requires HasSetFdFunction<T>
