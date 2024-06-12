@@ -114,8 +114,8 @@ ThreadManager<T>::~ThreadManager() {
 }
 
 template <typename T>
-requires HasSetFdFunction<T> bool
-ThreadManager<T>::Start(const std::shared_ptr<NetEvent> &listen, const std::shared_ptr<Timer> &timer) {
+requires HasSetFdFunction<T>
+bool ThreadManager<T>::Start(const std::shared_ptr<NetEvent> &listen, const std::shared_ptr<Timer> &timer) {
   if (!CreateReadThread(listen, timer)) {
     return false;
   }
@@ -262,8 +262,8 @@ void ThreadManager<T>::SendPacket(const T &conn, std::string &&msg) {
 }
 
 template <typename T>
-requires HasSetFdFunction<T> bool
-ThreadManager<T>::CreateReadThread(const std::shared_ptr<NetEvent> &listen, const std::shared_ptr<Timer> &timer) {
+requires HasSetFdFunction<T>
+bool ThreadManager<T>::CreateReadThread(const std::shared_ptr<NetEvent> &listen, const std::shared_ptr<Timer> &timer) {
   std::shared_ptr<BaseEvent> event;
   int8_t eventMode = BaseEvent::EVENT_MODE_READ;
   if (!rwSeparation_) {
@@ -298,8 +298,8 @@ ThreadManager<T>::CreateReadThread(const std::shared_ptr<NetEvent> &listen, cons
 }
 
 template <typename T>
-requires HasSetFdFunction<T> bool
-ThreadManager<T>::CreateWriteThread() {
+requires HasSetFdFunction<T>
+bool ThreadManager<T>::CreateWriteThread() {
   std::shared_ptr<BaseEvent> event;
 
 #if defined(HAVE_EPOLL)
