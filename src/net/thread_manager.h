@@ -13,6 +13,7 @@
 #include <shared_mutex>
 #include <unordered_map>
 
+#include "base_event.h"
 #include "callback_function.h"
 #include "io_thread.h"
 
