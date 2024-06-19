@@ -52,16 +52,16 @@ class BaseEvent : public std::enable_shared_from_this<BaseEvent> {
   virtual ~BaseEvent() = default;
 
   // add fd to poll
-  virtual void AddEvent(int fd, int mask) = 0;
+  virtual void AddEvent(uint64_t id, int fd, int mask) = 0;
 
   // delete fd from poll
   virtual void DelEvent(int fd) = 0;
 
   // add write event
-  virtual void AddWriteEvent(int fd) = 0;
+  virtual void AddWriteEvent(uint64_t id, int fd) = 0;
 
   // delete write event
-  virtual void DelWriteEvent(int fd) = 0;
+  virtual void DelWriteEvent(uint64_t id, int fd) = 0;
 
   // poll event
   virtual void EventPoll() = 0;
@@ -78,23 +78,23 @@ class BaseEvent : public std::enable_shared_from_this<BaseEvent> {
     running_ = false;
 
     char signal_byte = 'X';
-    ::write(pipeFd[1], &signal_byte, sizeof(signal_byte));  // send signal to pipe，end poll loop
+    ::write(pipeFd_[1], &signal_byte, sizeof(signal_byte));  // send signal to pipe，end poll loop
     close(EvFd());
   }
 
   inline int EvFd() const { return evFd_; }
 
-  inline void SetOnCreate(std::function<void(int fd, std::shared_ptr<Connection>)> &&onCreate) {
+  inline void SetOnCreate(std::function<void(uint64_t, std::shared_ptr<Connection>)> &&onCreate) {
     onCreate_ = std::move(onCreate);
   }
 
-  inline void SetOnMessage(std::function<void(int fd, std::string &&)> &&onMessage) {
+  inline void SetOnMessage(std::function<void(uint64_t, std::string &&)> &&onMessage) {
     onMessage_ = std::move(onMessage);
   }
 
-  inline void SetOnClose(std::function<void(int fd, std::string &&)> &&onClose) { onClose_ = std::move(onClose); }
+  inline void SetOnClose(std::function<void(uint64_t, std::string &&)> &&onClose) { onClose_ = std::move(onClose); }
 
-  inline void SetGetConn(std::function<std::shared_ptr<Connection>(int fd)> &&getConn) {
+  inline void SetGetConn(std::function<std::shared_ptr<Connection>(uint64_t)> &&getConn) {
     getConn_ = std::move(getConn);
   }
 
@@ -112,7 +112,7 @@ class BaseEvent : public std::enable_shared_from_this<BaseEvent> {
   // The type of the current multiplexing is epoll or kqueue
   const int8_t type_ = 0;
 
-  int pipeFd[2]{};
+  int pipeFd_[2]{};
 
   std::shared_ptr<Timer> timer_;
 
@@ -120,16 +120,16 @@ class BaseEvent : public std::enable_shared_from_this<BaseEvent> {
   std::shared_ptr<NetEvent> listen_;
 
   // callback function when a new connection is created
-  std::function<void(int fd, std::shared_ptr<Connection>)> onCreate_;
+  std::function<void(uint64_t, std::shared_ptr<Connection>)> onCreate_;
 
   // callback function when a message is received
-  std::function<void(int fd, std::string &&)> onMessage_;
+  std::function<void(uint64_t, std::string &&)> onMessage_;
 
   // callback function when a connection is closed
-  std::function<void(int fd, std::string &&)> onClose_;
+  std::function<void(uint64_t, std::string &&)> onClose_;
 
   // get connection by fd
-  std::function<std::shared_ptr<Connection>(int fd)> getConn_;
+  std::function<std::shared_ptr<Connection>(uint64_t)> getConn_;
 };
 
 }  // namespace net

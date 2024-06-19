@@ -150,11 +150,11 @@ bool PikiwiDB::Init() {
   INFO("Add listen addr:{}, port:{}", g_config.ip.ToString(), g_config.port.load());
   event_server_->AddListenAddr(addr);
 
-  event_server_->SetOnCreate([](int fd, std::shared_ptr<PClient>* client, const net::SocketAddr& addr) {
+  event_server_->SetOnCreate([](uint64_t connID, std::shared_ptr<PClient>* client, const net::SocketAddr& addr) {
     //    *client = std::make_shared<PClient>();
     (*client)->SetSocketAddr(addr);
     (*client)->OnConnect();
-    INFO("New connection from fd:{} IP:{} port:{}", fd, addr.GetIP(), addr.GetPort());
+    INFO("New connection from fd:{} IP:{} port:{}", connID, addr.GetIP(), addr.GetPort());
   });
 
   event_server_->SetOnMessage([](std::string&& msg, std::shared_ptr<PClient>& t) {

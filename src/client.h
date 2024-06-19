@@ -226,10 +226,10 @@ class PClient : public std::enable_shared_from_this<PClient>, public CmdRes {
 
   inline void SetState(ClientState state) { state_ = state; }
 
-  inline void SetFd(int fd) { net_fd_ = fd; }
-  inline int GetFd() const { return net_fd_; }
-  inline void SetThreadIndex(int index) { net_thread_index_ = index; }
-  inline int GetThreadIndex() const { return net_thread_index_; }
+  inline void SetConnId(uint64_t id) { net_id_ = id; }
+  inline uint64_t GetConnId() const { return net_id_; }
+  inline void SetThreadIndex(int8_t index) { net_thread_index_ = index; }
+  inline int8_t GetThreadIndex() const { return net_thread_index_; }
   inline void SetSocketAddr(const net::SocketAddr& addr) { addr_ = addr; }
 
   // All parameters of this command (including the command itself)
@@ -286,8 +286,8 @@ class PClient : public std::enable_shared_from_this<PClient>, public CmdRes {
 
   ClientState state_;
 
-  int net_fd_ = 0;
-  int net_thread_index_ = 0;
+  uint64_t net_id_ = 0;
+  int8_t net_thread_index_ = 0;
   net::SocketAddr addr_;
 
   static thread_local PClient* s_current;
