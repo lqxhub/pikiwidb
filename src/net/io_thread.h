@@ -32,10 +32,10 @@ class IOThread {
   void Wait();
 
   // Add read event to epoll when send message to client
-  inline void SetWriteEvent(int fd) { baseEvent_->AddWriteEvent(fd); }
+  inline void SetWriteEvent(uint64_t id, int fd) { baseEvent_->AddWriteEvent(id, fd); }
 
   // Add new event to epoll when new connection
-  inline void AddNewEvent(int fd, int mask) { baseEvent_->AddEvent(fd, mask); }
+  inline void AddNewEvent(uint64_t connId, int fd, int mask) { baseEvent_->AddEvent(connId, fd, mask); }
 
  protected:
   std::atomic<bool> running_ = true;

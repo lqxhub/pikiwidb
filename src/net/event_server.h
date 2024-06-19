@@ -21,6 +21,10 @@
 
 namespace net {
 
+std::atomic<uint64_t> g_connId = 0;
+
+uint64_t getConnId() { return ++g_connId; }
+
 template <typename T>
 requires HasSetFdFunction<T>
 class EventServer final {
@@ -100,7 +104,8 @@ class EventServer final {
 };
 
 template <typename T>
-requires HasSetFdFunction<T> std::pair<bool, std::string> EventServer<T>::StartServer(int64_t interval) {
+requires HasSetFdFunction<T>
+std::pair<bool, std::string> EventServer<T>::StartServer(int64_t interval) {
   if (threadNum_ <= 0) {
     return std::pair(false, "thread num must be greater than 0");
   }
@@ -138,7 +143,8 @@ requires HasSetFdFunction<T> std::pair<bool, std::string> EventServer<T>::StartS
 }
 
 template <typename T>
-requires HasSetFdFunction<T> std::pair<bool, std::string> EventServer<T>::StartClientServer() {
+requires HasSetFdFunction<T>
+std::pair<bool, std::string> EventServer<T>::StartClientServer() {
   if (threadNum_ <= 0) {
     return std::pair(false, "thread num must be greater than 0");
   }
@@ -199,16 +205,16 @@ template <typename T>
 requires HasSetFdFunction<T>
 void EventServer<T>::CloseConnection(const T &conn) {
   int thIndex = -1;
-  int fd = 0;
+  int connId = 0;
   if constexpr (IsPointer_v<T>) {
     thIndex = conn->GetThreadIndex();
-    fd = conn->GetFd();
+    connId = conn->GetConnId();
   } else {
     thIndex = conn.GetThreadIndex();
-    fd = conn.GetFd();
+    connId = conn.GetConnId();
   }
 
-  threadsManager_[thIndex]->CloseConnection(fd);
+  threadsManager_[thIndex]->CloseConnection(connId);
 }
 
 template <typename T>

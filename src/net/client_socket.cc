@@ -8,7 +8,6 @@
 #include <sstream>
 
 #include "client_socket.h"
-#include "event_server.h"
 
 namespace net {
 

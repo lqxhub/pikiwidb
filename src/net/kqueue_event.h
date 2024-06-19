@@ -30,13 +30,13 @@ class KqueueEvent : public BaseEvent {
 
   bool Init() override;
 
-  void AddEvent(int fd, int mask) override;
+  void AddEvent(uint64_t id, int fd, int mask) override;
 
   void DelEvent(int fd) override;
 
-  void AddWriteEvent(int fd) override;
+  void AddWriteEvent(uint64_t id, int fd) override;
 
-  void DelWriteEvent(int fd) override;
+  void DelWriteEvent(uint64_t id, int fd) override;
 
   void EventPoll() override;
 

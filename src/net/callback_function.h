@@ -47,10 +47,10 @@ void InitPointer(std::unique_ptr<T> &t) {
 }
 
 template <typename T>
-concept HasSetFdFunction = requires(T t, int id, int8_t index) {
+concept HasSetFdFunction = requires(T t, uint64_t id, int8_t index) {
   // If T is of pointer type, then dereference and call the member function
-  { (*t).SetFd(id) } -> std::same_as<void>;              // SetFd return type is void
-  { (*t).GetFd() } -> std::same_as<int>;                 // GetFd return type is int
+  { (*t).SetConnId(id) } -> std::same_as<void>;              // SetFd return type is void
+  { (*t).GetConnId() } -> std::same_as<uint64_t>;                 // GetFd return type is int
   { (*t).SetThreadIndex(index) } -> std::same_as<void>;  // SetThreadIndex return type is void
   { (*t).GetThreadIndex() } -> std::same_as<int8_t>;     // GetThreadIndex return type is int8_t
 }
@@ -58,15 +58,15 @@ concept HasSetFdFunction = requires(T t, int id, int8_t index) {
 
 template <typename T>
 requires HasSetFdFunction<T>
-using OnCreate = std::function<void(int fd, T *t, const SocketAddr &addr)>;
+using OnCreate = std::function<void(uint64_t, T *, const SocketAddr &)>;
 
 template <typename T>
 requires HasSetFdFunction<T>
-using OnMessage = std::function<void(std::string &&msg, T &t)>;
+using OnMessage = std::function<void(std::string &&, T &)>;
 
 template <typename T>
 requires HasSetFdFunction<T>
-using OnClose = std::function<void(T &t, std::string &&err)>;
+using OnClose = std::function<void(T &, std::string &&)>;
 
 // class BaseEvent;
 
@@ -80,7 +80,6 @@ struct Connection {
 
   ~Connection() = default;
 
-  //  std::shared_ptr<BaseEvent> poll_;
   std::unique_ptr<NetEvent> netEvent_;
 
   SocketAddr addr_;
