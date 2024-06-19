@@ -24,18 +24,18 @@ bool EpollEvent::Init() {
     return false;
   }
   if (mode_ & EVENT_MODE_READ) {  // Add the listen socket to epoll for read
-    AddEvent(listen_->Fd(), EVENT_READ | EVENT_ERROR | EVENT_HUB);
+    AddEvent(listen_->Fd(), listen_->Fd(), EVENT_READ | EVENT_ERROR | EVENT_HUB);
   }
-  pipe(pipeFd);
-  AddEvent(pipeFd[0], EVENT_READ | EVENT_ERROR | EVENT_HUB);
+  pipe(pipeFd_);
+  AddEvent(pipeFd_[0], pipeFd_[0], EVENT_READ | EVENT_ERROR | EVENT_HUB);
 
   return true;
 }
 
-void EpollEvent::AddEvent(int fd, int mask) {
+void EpollEvent::AddEvent(uint64_t id, int fd, int mask) {
   struct epoll_event ev {};
   ev.events = mask;
-  ev.data.fd = fd;
+  ev.data.u64 = id;
   epoll_ctl(EvFd(), EPOLL_CTL_ADD, fd, &ev);
 }
 
@@ -49,30 +49,28 @@ void EpollEvent::EventPoll() {
   }
 }
 
-void EpollEvent::AddWriteEvent(int fd) {
+void EpollEvent::AddWriteEvent(uint64_t id, int fd) {
   if (mode_ & EVENT_MODE_READ) {  // If it is a read multiplex, modify the event
     struct epoll_event ev {};
     ev.events = EVENT_WRITE;
-    ev.data.fd = fd;
+    ev.data.u64 = id;
     epoll_ctl(EvFd(), EPOLL_CTL_MOD, fd, &ev);
   } else {  // If it is a write multiplex, add the event
     struct epoll_event ev {};
     ev.events = EVENT_WRITE;
-    ev.data.fd = fd;
+    ev.data.u64 = id;
     epoll_ctl(EvFd(), EPOLL_CTL_ADD, fd, &ev);
   }
 }
 
-void EpollEvent::DelWriteEvent(int fd) {
+void EpollEvent::DelWriteEvent(uint64_t id, int fd) {
   if (mode_ & EVENT_MODE_READ) {  // If it is a read multiplex, modify the event to read
     struct epoll_event ev {};
     ev.events = EVENT_READ;
-    ev.data.fd = fd;
+    ev.data.u64 = id;
     epoll_ctl(EvFd(), EPOLL_CTL_MOD, fd, &ev);
   } else {
-    struct epoll_event ev {};
-    ev.data.fd = fd;
-    epoll_ctl(EvFd(), EPOLL_CTL_DEL, fd, &ev);
+    epoll_ctl(EvFd(), EPOLL_CTL_DEL, fd, nullptr);
   }
 }
 
@@ -93,14 +91,14 @@ void EpollEvent::EventRead() {
       std::shared_ptr<Connection> conn;
       if (events[i].events & EVENT_READ) {
         // If the event is less than the listen socket, it is a new connection
-        if (events[i].data.fd != listen_->Fd()) {
-          conn = getConn_(events[i].data.fd);
+        if (events[i].data.u64 != listen_->Fd()) {
+          conn = getConn_(events[i].data.u64);
         }
         DoRead(events[i], conn);
       }
 
       if ((mode_ & EVENT_MODE_WRITE) && events[i].events & EVENT_WRITE) {
-        conn = getConn_(events[i].data.fd);
+        conn = getConn_(events[i].data.u64);
         if (!conn) {  // If the connection is empty, call DoError
           DoError(events[i], "connection is null");
           continue;
@@ -123,7 +121,7 @@ void EpollEvent::EventWrite() {
       if ((events[i].events & EVENT_HUB) || (events[i].events & EVENT_ERROR)) {
         DoError(events[i], "");
       }
-      auto conn = getConn_(events[i].data.fd);
+      auto conn = getConn_(events[i].data.u64);
       if (!conn) {
         DoError(events[i], "connection is null");
         continue;
@@ -136,7 +134,7 @@ void EpollEvent::EventWrite() {
 }
 
 void EpollEvent::DoRead(const epoll_event &event, const std::shared_ptr<Connection> &conn) {
-  if (event.data.fd == listen_->Fd()) {
+  if (event.data.u64 == listen_->Fd()) {
     auto newConn = std::make_shared<Connection>(nullptr);
     auto connFd = listen_->OnReadable(newConn, nullptr);
     if (connFd < 0) {
@@ -154,7 +152,7 @@ void EpollEvent::DoRead(const epoll_event &event, const std::shared_ptr<Connecti
       DoError(event, "");
       return;
     }
-    onMessage_(event.data.fd, std::move(readBuff));
+    onMessage_(event.data.u64, std::move(readBuff));
   } else {
     DoError(event, "connection is null");
   }
@@ -167,14 +165,11 @@ void EpollEvent::DoWrite(const epoll_event &event, const std::shared_ptr<Connect
     return;
   }
   if (ret == 0) {
-    DelWriteEvent(event.data.fd);
+    DelWriteEvent(event.data.u64, conn->fd_);
   }
 }
 
-void EpollEvent::DoError(const epoll_event &event, std::string &&err) {
-  DelEvent(event.data.fd);
-  onClose_(event.data.fd, std::move(err));
-}
+void EpollEvent::DoError(const epoll_event &event, std::string &&err) { onClose_(event.data.u64, std::move(err)); }
 
 }  // namespace net
 #endif

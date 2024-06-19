@@ -31,7 +31,7 @@ class EpollEvent : public BaseEvent {
   bool Init() override;
 
   // Add event to epoll, mask is the event type
-  void AddEvent(int fd, int mask) override;
+  void AddEvent(uint64_t id, int fd, int mask) override;
 
   // Delete event from epoll
   void DelEvent(int fd) override;
@@ -40,10 +40,10 @@ class EpollEvent : public BaseEvent {
   void EventPoll() override;
 
   // Add write event to epoll
-  void AddWriteEvent(int fd) override;
+  void AddWriteEvent(uint64_t id, int fd) override;
 
   // Delete write event from epoll
-  void DelWriteEvent(int fd) override;
+  void DelWriteEvent(uint64_t id, int fd) override;
 
   // Handle read event
   void EventRead();
