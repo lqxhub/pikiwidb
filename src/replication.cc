@@ -188,10 +188,11 @@ void PReplication::Cron() {
 
         INFO("Try connect to master IP:{} port:{}", masterInfo_.addr.GetIP(), masterInfo_.addr.GetPort());
 
-        auto on_new_conn = [](int fd, std::shared_ptr<pikiwidb::PClient>* client, const net::SocketAddr& addr) {
+        auto on_new_conn = [](uint64_t connID, std::shared_ptr<pikiwidb::PClient>* client,
+                              const net::SocketAddr& addr) {
           INFO("Connect to master IP:{} port:{}", addr.GetIP(), addr.GetPort());
           if (g_pikiwidb) {
-            g_pikiwidb->OnNewConnection(fd, client, addr);
+            g_pikiwidb->OnNewConnection(connID, client, addr);
           }
         };
 

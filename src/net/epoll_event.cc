@@ -146,7 +146,7 @@ void EpollEvent::DoRead(const epoll_event &event, const std::shared_ptr<Connecti
     std::string readBuff;
     int ret = conn->netEvent_->OnReadable(conn, &readBuff);
     if (ret == NE_ERROR) {
-      DoError(event, "read error");
+      DoError(event, "read error,errno: " + std::to_string(errno));
       return;
     } else if (ret == NE_CLOSE) {
       DoError(event, "");
@@ -161,7 +161,7 @@ void EpollEvent::DoRead(const epoll_event &event, const std::shared_ptr<Connecti
 void EpollEvent::DoWrite(const epoll_event &event, const std::shared_ptr<Connection> &conn) {
   auto ret = conn->netEvent_->OnWritable();
   if (ret == NE_ERROR) {
-    DoError(event, "write error");
+    DoError(event, "write error,errno: " + std::to_string(errno));
     return;
   }
   if (ret == 0) {

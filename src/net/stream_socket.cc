@@ -16,6 +16,9 @@ int StreamSocket::OnWritable() {
   std::lock_guard<std::mutex> lock(sendMutex_);
   size_t ret = ::write(Fd(), sendData_.c_str() + sendPos_, sendData_.size() - sendPos_);
   if (ret == -1) {
+    if (EAGAIN == errno || EWOULDBLOCK == errno) {
+      return NE_OK;
+    }
     return NE_ERROR;
   }
   sendPos_ += ret;
