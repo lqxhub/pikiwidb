@@ -103,7 +103,8 @@ bool PikiwiDB::ParseArgs(int ac, char* av[]) {
   return true;
 }
 
-void PikiwiDB::OnNewConnection(int fd, std::shared_ptr<pikiwidb::PClient>* client, const net::SocketAddr& addr) {
+void PikiwiDB::OnNewConnection(uint64_t connId, std::shared_ptr<pikiwidb::PClient>* client,
+                               const net::SocketAddr& addr) {
   INFO("New connection from {}:{}", addr.GetIP(), addr.GetPort());
 
   //  *client = std::make_shared<PClient>();
@@ -139,13 +140,14 @@ bool PikiwiDB::Init() {
   PSlowLog::Instance().SetLogLimit(static_cast<std::size_t>(g_config.slow_log_max_len.load()));
 
   // master ip
-  if (!g_config.ip.empty()) {
+  if (!g_config.master_ip.empty()) {
     PREPL.SetMasterAddr(g_config.master_ip.ToString().c_str(), g_config.master_port.load());
   }
 
   event_server_ = std::make_unique<net::EventServer<std::shared_ptr<PClient>>>(num);
 
-  event_server_->SetRwSeparation(false);
+  event_server_->SetRwSeparation(true);
+
   net::SocketAddr addr(g_config.ip.ToString(), g_config.port.load());
   INFO("Add listen addr:{}, port:{}", g_config.ip.ToString(), g_config.port.load());
   event_server_->AddListenAddr(addr);
@@ -158,12 +160,12 @@ bool PikiwiDB::Init() {
   });
 
   event_server_->SetOnMessage([](std::string&& msg, std::shared_ptr<PClient>& t) {
-    INFO("Receive message: {}", msg);
+    //    INFO("Receive message: {}", msg);
     t->handlePacket(msg.c_str(), static_cast<int>(msg.size()));
   });
 
   event_server_->SetOnClose([](std::shared_ptr<PClient>& client, std::string&& msg) {
-    INFO("Close connection: {}", msg);
+    INFO("Close connection id:{} msg:{}", client->GetConnId(), msg);
     client->OnClose();
   });
 

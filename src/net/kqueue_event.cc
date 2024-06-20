@@ -32,7 +32,6 @@ bool KqueueEvent::Init() {
 void KqueueEvent::AddEvent(uint64_t id, int fd, int mask) {
   struct kevent change;
   EV_SET(&change, fd, mask, EV_ADD, 0, 0, reinterpret_cast<void *>(id));
-  std::cout << "AddEvent fd:" << fd << " id:" << id << std::endl;
   kevent(EvFd(), &change, 1, nullptr, 0, nullptr);
 }
 
@@ -130,7 +129,7 @@ void KqueueEvent::DoRead(const struct kevent &event, const std::shared_ptr<Conne
     std::string readBuff;
     int ret = conn->netEvent_->OnReadable(conn, &readBuff);
     if (ret == NE_ERROR) {
-      DoError(event, "read error");
+      DoError(event, "read error,errno: " + std::to_string(errno));
       return;
     } else if (ret == NE_CLOSE) {
       DoError(event, "");
@@ -145,7 +144,7 @@ void KqueueEvent::DoRead(const struct kevent &event, const std::shared_ptr<Conne
 void KqueueEvent::DoWrite(const struct kevent &event, const std::shared_ptr<Connection> &conn) {
   auto ret = conn->netEvent_->OnWritable();
   if (ret == NE_ERROR) {
-    DoError(event, "DoWrite error");
+    DoError(event, "DoWrite error,errno: " + std::to_string(errno));
     return;
   }
   if (ret == 0) {
