@@ -49,8 +49,8 @@ void InitPointer(std::unique_ptr<T> &t) {
 template <typename T>
 concept HasSetFdFunction = requires(T t, uint64_t id, int8_t index) {
   // If T is of pointer type, then dereference and call the member function
-  { (*t).SetConnId(id) } -> std::same_as<void>;              // SetFd return type is void
-  { (*t).GetConnId() } -> std::same_as<uint64_t>;                 // GetFd return type is int
+  { (*t).SetConnId(id) } -> std::same_as<void>;          // SetFd return type is void
+  { (*t).GetConnId() } -> std::same_as<uint64_t>;        // GetFd return type is int
   { (*t).SetThreadIndex(index) } -> std::same_as<void>;  // SetThreadIndex return type is void
   { (*t).GetThreadIndex() } -> std::same_as<int8_t>;     // GetThreadIndex return type is int8_t
 }
