@@ -11,52 +11,44 @@ namespace net {
 
 int64_t Timer::AddTask(const std::shared_ptr<ITimerTask>& task) {
   std::unique_lock l(lock_);
-  int64_t _taskId = taskId();
+  int64_t _taskId = TaskId();
   task->SetId(_taskId);
   queue_.push(task);
   return _taskId;
 }
 
-void Timer::DelTask(int64_t taskId) {
-  std::unique_lock l(lockSet_);
-  markDel.insert(taskId);
-}
-
 void Timer::RePushTask() {
   for (const auto& task : list_) {
     task->Next();
-    {
-      std::unique_lock l(lock_);
-      queue_.push(task);
-    }
+    { queue_.push(task); }
   }
   list_.clear();
 }
 
-void Timer::PopTask(bool deleted) {
-  std::unique_lock l(lock_);
+void Timer::PopTask(std::shared_ptr<ITimerTask>& task, bool deleted) {
   if (deleted) {
-    delMark(queue_.top()->Id());
+    DelMark(task->Id());
   } else {
-    list_.emplace_back(queue_.top());
+    list_.emplace_back(task);
   }
 
   queue_.pop();
 }
 
 void Timer::OnTimer() {
+  std::unique_lock l(lock_);
   auto now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
                  .count();
 
   while (!queue_.empty()) {
     auto task = queue_.top();
     if (Deleted(task->Id())) {
-      PopTask(true);
+      PopTask(task, true);
       continue;
     }
     if (now >= task->Start()) {
       task->TimeOut();
-      PopTask(false);
+      PopTask(task, false);
     } else {
       break;
     }

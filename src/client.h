@@ -136,9 +136,6 @@ class PClient : public std::enable_shared_from_this<PClient>, public CmdRes {
     Clear();
     reset();
   }
-  //  bool SendPacket(const evbuffer_iovec* iovecs, size_t nvecs);
-
-  void WriteReply2Client();
 
   // active close
   void Close();
@@ -244,7 +241,7 @@ class PClient : public std::enable_shared_from_this<PClient>, public CmdRes {
   int processInlineCmd(const char*, size_t, std::vector<std::string>&);
   void reset();
   bool isPeerMaster() const;
-  int uniqueID() const;
+  uint64_t uniqueID() const;
 
   bool isClusterCmdTarget() const;
 

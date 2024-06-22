@@ -11,7 +11,7 @@
 
 namespace net {
 
-bool net::ClientSocket::Connect() {
+bool ClientSocket::Connect() {
   fd_ = CreateTCPSocket();
   if (fd_ == -1) {
     onConnectFail_("CreateTCPSocket open socket failed");
