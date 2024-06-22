@@ -69,7 +69,7 @@ class BaseSocket : public NetEvent {
   inline bool NoBlock() const { return noBlock_; }
 
  private:
-  int type_ = 0;  // socket type (TCP/UDP)
+  int type_ = SOCKET_NONE;  // socket type (TCP/UDP)
   bool noBlock_ = true;
 };
 

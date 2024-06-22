@@ -36,12 +36,13 @@ class PikiwiDB final {
   //  void Recycle();
   void Stop();
 
-  void OnNewConnection(uint64_t connId, std::shared_ptr<pikiwidb::PClient>* client, const net::SocketAddr& addr);
+  static void OnNewConnection(uint64_t connId, std::shared_ptr<pikiwidb::PClient> client, const net::SocketAddr& addr);
 
   //  pikiwidb::CmdTableManager& GetCmdTableManager();
   uint32_t GetCmdID() { return ++cmd_id_; };
 
   void SubmitFast(const std::shared_ptr<pikiwidb::CmdThreadPoolTask>& runner) { cmd_threads_.SubmitFast(runner); }
+  void SubmitSlow(const std::shared_ptr<pikiwidb::CmdThreadPoolTask>& runner) { cmd_threads_.SubmitSlow(runner); }
 
   void PushWriteTask(const std::shared_ptr<pikiwidb::PClient>& client) {
     std::string msg;
@@ -60,7 +61,7 @@ class PikiwiDB final {
 
   void TCPConnect(
       const net::SocketAddr& addr,
-      const std::function<void(int, std::shared_ptr<pikiwidb::PClient>*, const net::SocketAddr&)>& onConnect,
+      const std::function<void(uint64_t, std::shared_ptr<pikiwidb::PClient>, const net::SocketAddr&)>& onConnect,
       const std::function<void(std::string)>& cb);
 
  public:
@@ -74,10 +75,7 @@ class PikiwiDB final {
   static const uint32_t kRunidSize;
 
  private:
-  //  pikiwidb::WorkIOThreadPool worker_threads_;
-  //  pikiwidb::IOThreadPool slave_threads_;
   pikiwidb::CmdThreadPool cmd_threads_;
-  //  pikiwidb::CmdTableManager cmd_table_manager_;
 
   std::unique_ptr<net::EventServer<std::shared_ptr<pikiwidb::PClient>>> event_server_;
   uint32_t cmd_id_ = 0;

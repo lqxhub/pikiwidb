@@ -40,7 +40,10 @@ class ThreadManager {
 
   ~ThreadManager();
 
-  // set new connect callback function
+  // set new connect create before callback function
+  inline void SetOnInit(const OnInit<T> &func) { onInit_ = func; }
+
+  // set new connect create callback function
   inline void SetOnCreate(const OnCreate<T> &func) { onCreate_ = func; }
 
   inline void SetOnConnect(const OnCreate<T> &func) { onConnect_ = func; }
@@ -100,6 +103,8 @@ class ThreadManager {
 
   std::shared_mutex mutex_;
 
+  OnInit<T> onInit_;
+
   OnCreate<T> onCreate_;
 
   OnCreate<T> onConnect_;
@@ -140,9 +145,9 @@ template <typename T>
 requires HasSetFdFunction<T>
 void ThreadManager<T>::OnNetEventCreate(int fd, const std::shared_ptr<Connection> &conn) {
   T t;
+  onInit_(&t);
   auto connId = getConnId();
   if constexpr (IsPointer_v<T>) {
-    InitPointer(t);
     t->SetConnId(connId);
     t->SetThreadIndex(index_);
   } else {
@@ -156,7 +161,7 @@ void ThreadManager<T>::OnNetEventCreate(int fd, const std::shared_ptr<Connection
   }
   readThread_->AddNewEvent(connId, fd, BaseEvent::EVENT_READ | BaseEvent::EVENT_ERROR | BaseEvent::EVENT_HUB);
 
-  onCreate_(connId, &t, conn->addr_);
+  onCreate_(connId, t, conn->addr_);
 }
 
 template <typename T>
@@ -177,7 +182,7 @@ void ThreadManager<T>::OnNetEventMessage(uint64_t connId, std::string &&readData
 template <typename T>
 requires HasSetFdFunction<T>
 void ThreadManager<T>::OnNetEventClose(uint64_t connId, std::string &&err) {
-  int fd = 0;
+  int fd;
   std::lock_guard lock(mutex_);
   auto iter = connections_.find(connId);
   if (iter == connections_.end()) {
@@ -205,11 +210,9 @@ void ThreadManager<T>::TCPConnect(const SocketAddr &addr, std::unique_ptr<NetEve
   auto newConn = std::make_shared<Connection>(std::move(netEvent));
   newConn->addr_ = addr;
   T t;
-  if constexpr (IsPointer_v<T>) {
-    InitPointer(t);
-  }
+  onInit_(&t);
   auto connId = DoTCPConnect(t, newConn->netEvent_->Fd(), newConn);
-  onConnect_(connId, &t, addr);
+  onConnect_(connId, t, addr);
 }
 
 template <typename T>
@@ -218,11 +221,9 @@ void ThreadManager<T>::TCPConnect(const SocketAddr &addr, std::unique_ptr<NetEve
   auto newConn = std::make_shared<Connection>(std::move(netEvent));
   newConn->addr_ = addr;
   T t;
-  if constexpr (IsPointer_v<T>) {
-    InitPointer(t);
-  }
+  onInit_(&t);
   auto connId = DoTCPConnect(t, newConn->netEvent_->Fd(), newConn);
-  onConnect(connId, &t, addr);
+  onConnect(connId, t, addr);
 }
 
 template <typename T>

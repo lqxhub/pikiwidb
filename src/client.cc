@@ -421,23 +421,6 @@ PClient::PClient() : parser_(params_) {
   reset();
 }
 
-// int PClient::HandlePackets(pikiwidb::TcpConnection* obj, const char* start, int size) {
-//   int total = 0;
-//   while (total < size) {
-//     auto processed = handlePacket(start + total, size - total);
-//     if (processed <= 0) {
-//       break;
-//     }
-//
-//     total += processed;
-//   }
-//
-//   //  obj->SendPacket(Message());
-//   //  Clear();
-//   //  reply_.Clear();
-//   return total;
-// }
-
 void PClient::OnConnect() {
   SetState(ClientState::kOK);
   if (isPeerMaster()) {
@@ -461,25 +444,19 @@ void PClient::OnConnect() {
   }
 }
 
-std::string PClient::PeerIP() const { return addr_.GetIP(); }
+std::string PClient::PeerIP() const {
+  if (!addr_.IsValid()) {
+    return "";
+  }
+  return addr_.GetIP();
+}
 
-int PClient::PeerPort() const { return addr_.GetPort(); }
-
-// bool PClient::SendPacket(const std::string& buf) {
-//   if (auto c = getTcpConnection(); c) {
-//     return c->SendPacket(buf);
-//   }
-//
-//   return false;
-// }
-
-// bool PClient::SendPacket(const void* data, size_t size) {
-//   if (auto c = getTcpConnection(); c) {
-//     return c->SendPacket(data, size);
-//   }
-//
-//   return false;
-// }
+int PClient::PeerPort() const {
+  if (!addr_.IsValid()) {
+    return -1;
+  }
+  return addr_.GetPort();
+}
 
 bool PClient::SendPacket() {
   std::string str;
@@ -499,22 +476,6 @@ bool PClient::SendPacket(UnboundedBuffer& data) {
   g_pikiwidb->SendPacket2Client(shared_from_this(), std::move(data.ToString()));
   SendOver();
   return true;
-}
-
-// bool PClient::SendPacket(const evbuffer_iovec* iovecs, size_t nvecs) {
-//   if (auto c = getTcpConnection(); c) {
-//     return c->SendPacket(iovecs, nvecs);
-//   }
-//
-//   return false;
-// }
-
-void PClient::WriteReply2Client() {
-  //  if (auto c = getTcpConnection(); c) {
-  //    c->SendPacket(Message());
-  //  }
-  Clear();
-  reset();
 }
 
 void PClient::Close() { g_pikiwidb->CloseConnection(shared_from_this()); }
@@ -538,13 +499,7 @@ bool PClient::isClusterCmdTarget() const {
   return PRAFT.GetClusterCmdCtx().GetPeerIp() == PeerIP() && PRAFT.GetClusterCmdCtx().GetPort() == PeerPort();
 }
 
-int PClient::uniqueID() const {
-  //  if (auto c = getTcpConnection(); c) {
-  //    return c->GetUniqueId();
-  //  }
-
-  return -1;
-}
+uint64_t PClient::uniqueID() const { return GetConnId(); }
 
 bool PClient::Watch(int dbno, const std::string& key) {
   DEBUG("Client {} watch {}, db {}", name_, key, dbno);
@@ -670,35 +625,30 @@ void PClient::FeedMonitors(const std::vector<std::string>& params) {
     }
   }
 
-  char buf[512];
-  int n = snprintf(buf, sizeof buf, "+[db%d %s:%d]: \"", s_current->GetCurrentDB(), s_current->PeerIP().c_str(),
-                   s_current->PeerPort());
-
-  assert(n > 0);
+  fmt::memory_buffer buf;
+  fmt::format_to(std::back_inserter(buf), "+[db{} {}:{}]: \"", s_current->GetCurrentDB(), s_current->PeerIP(),
+                 s_current->PeerPort());
 
   for (const auto& e : params) {
-    if (n < static_cast<int>(sizeof buf)) {
-      n += snprintf(buf + n, sizeof buf - n, "%s ", e.data());
-    } else {
-      break;
-    }
+    fmt::format_to(std::back_inserter(buf), "{} ", e);
   }
 
-  --n;  // no space follow last param
+  // remove the last space
+  if (!params.empty() && buf.size() > 0) {
+    buf.resize(buf.size() - 1);
+  }
 
   {
     std::unique_lock<std::mutex> guard(monitors_mutex);
 
-    for (auto it(monitors.begin()); it != monitors.end();) {
+    for (auto it = monitors.begin(); it != monitors.end();) {
       auto m = it->lock();
       if (m) {
-        std::string res(buf, n);
-        res.append("\"");
-        res.append(CRLF);
-        m->SendPacket(std::move(res));
+        fmt::format_to(std::back_inserter(buf), "\"\r\n");
+        m->SendPacket(fmt::to_string(buf));
         ++it;
       } else {
-        monitors.erase(it++);
+        it = monitors.erase(it);
       }
     }
   }

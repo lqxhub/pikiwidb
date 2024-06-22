@@ -104,13 +104,11 @@ bool PikiwiDB::ParseArgs(int ac, char* av[]) {
   return true;
 }
 
-void PikiwiDB::OnNewConnection(uint64_t connId, std::shared_ptr<pikiwidb::PClient>* client,
+void PikiwiDB::OnNewConnection(uint64_t connId, std::shared_ptr<pikiwidb::PClient> client,
                                const net::SocketAddr& addr) {
   INFO("New connection from {}:{}", addr.GetIP(), addr.GetPort());
-
-  //  *client = std::make_shared<PClient>();
-  (*client)->SetSocketAddr(addr);
-  (*client)->OnConnect();
+  client->SetSocketAddr(addr);
+  client->OnConnect();
 }
 
 bool PikiwiDB::Init() {
@@ -157,15 +155,15 @@ bool PikiwiDB::Init() {
   INFO("Add listen addr:{}, port:{}", g_config.ip.ToString(), g_config.port.load());
   event_server_->AddListenAddr(addr);
 
-  event_server_->SetOnCreate([](uint64_t connID, std::shared_ptr<PClient>* client, const net::SocketAddr& addr) {
-    //    *client = std::make_shared<PClient>();
-    (*client)->SetSocketAddr(addr);
-    (*client)->OnConnect();
+  event_server_->SetOnInit([](std::shared_ptr<PClient>* client) { *client = std::make_shared<PClient>(); });
+
+  event_server_->SetOnCreate([](uint64_t connID, std::shared_ptr<PClient>& client, const net::SocketAddr& addr) {
+    client->SetSocketAddr(addr);
+    client->OnConnect();
     INFO("New connection from fd:{} IP:{} port:{}", connID, addr.GetIP(), addr.GetPort());
   });
 
   event_server_->SetOnMessage([](std::string&& msg, std::shared_ptr<PClient>& t) {
-    //    INFO("Receive message: {}", msg);
     t->handlePacket(msg.c_str(), static_cast<int>(msg.size()));
   });
 
@@ -199,15 +197,13 @@ void PikiwiDB::Stop() {
   pikiwidb::PRAFT.ShutDown();
   pikiwidb::PRAFT.Join();
   pikiwidb::PRAFT.Clear();
-  //  slave_threads_.Exit();
-  //  worker_threads_.Exit();
   cmd_threads_.Stop();
   event_server_->StopServer();
 }
 
 void PikiwiDB::TCPConnect(
     const net::SocketAddr& addr,
-    const std::function<void(int, std::shared_ptr<pikiwidb::PClient>*, const net::SocketAddr&)>& onConnect,
+    const std::function<void(uint64_t, std::shared_ptr<pikiwidb::PClient>, const net::SocketAddr&)>& onConnect,
     const std::function<void(std::string)>& cb) {
   INFO("Connect to {}:{}", addr.GetIP(), addr.GetPort());
   event_server_->TCPConnect(addr, onConnect, cb);

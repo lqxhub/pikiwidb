@@ -20,8 +20,6 @@
 #include "net_event.h"
 #include "timer.h"
 
-// class NetEvent;
-
 namespace net {
 
 class BaseEvent : public std::enable_shared_from_this<BaseEvent> {
@@ -72,14 +70,12 @@ class BaseEvent : public std::enable_shared_from_this<BaseEvent> {
   void AddTimer(const std::shared_ptr<Timer> &timer) { timer_ = timer; };
 
   void Close() {
-    if (!running_) {
-      return;
+    bool run = true;
+    if (running_.compare_exchange_strong(run, false)) {
+      char signal_byte = 'X';
+      ::write(pipeFd_[1], &signal_byte, sizeof(signal_byte));  // send signal to pipe，end poll loop
+      close(EvFd());
     }
-    running_ = false;
-
-    char signal_byte = 'X';
-    ::write(pipeFd_[1], &signal_byte, sizeof(signal_byte));  // send signal to pipe，end poll loop
-    close(EvFd());
   }
 
   inline int EvFd() const { return evFd_; }
@@ -102,7 +98,7 @@ class BaseEvent : public std::enable_shared_from_this<BaseEvent> {
 
  protected:
   int evFd_ = 0;  // event fd
-  bool running_ = true;
+  std::atomic<bool> running_ = true;
 
   // Type of multiplexing supported.
   // If read/write fractions are not enabled,
@@ -128,7 +124,7 @@ class BaseEvent : public std::enable_shared_from_this<BaseEvent> {
   // callback function when a connection is closed
   std::function<void(uint64_t, std::string &&)> onClose_;
 
-  // get connection by fd
+  // get connection by connID
   std::function<std::shared_ptr<Connection>(uint64_t)> getConn_;
 };
 

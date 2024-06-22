@@ -29,6 +29,8 @@ class EventServer final {
 
   ~EventServer() = default;
 
+  inline void SetOnInit(OnInit<T> &&func) { onInit_ = std::move(func); }
+
   inline void SetOnCreate(OnCreate<T> &&func) { onCreate_ = std::move(func); }
 
   inline void SetOnConnect(OnCreate<T> &&func) { onConnect_ = std::move(func); }
@@ -72,9 +74,11 @@ class EventServer final {
   void TCPConnect(const SocketAddr &addr, const std::function<void(std::string)> &cb);
 
  private:
-  int Main(bool serverMode);
+  int StartThreadManager(bool serverMode);
 
  private:
+  OnInit<T> onInit_;  // The callback function used to initialize data before creating a connection
+
   OnCreate<T> onCreate_;  // The callback function when the connection is created
 
   OnCreate<T> onConnect_;  // The callback function when the client connection succeed
@@ -104,15 +108,15 @@ requires HasSetFdFunction<T> std::pair<bool, std::string> EventServer<T>::StartS
   if (threadNum_ <= 0) {
     return std::pair(false, "thread num must be greater than 0");
   }
-
+  if (!onInit_) {
+    return std::pair(false, "OnInit must be set");
+  }
   if (!onCreate_) {
     return std::pair(false, "OnCreate must be set");
   }
-
   if (!onMessage_) {
     return std::pair(false, "OnMessage must be set");
   }
-
   if (!onClose_) {
     return std::pair(false, "OnClose must be set");
   }
@@ -123,6 +127,7 @@ requires HasSetFdFunction<T> std::pair<bool, std::string> EventServer<T>::StartS
 
   for (int8_t i = 0; i < threadNum_; ++i) {
     auto tm = std::make_unique<ThreadManager<T>>(i, rwSeparation_);
+    tm->SetOnInit(onInit_);
     tm->SetOnCreate(onCreate_);
     tm->SetOnConnect(onConnect_);
     tm->SetOnMessage(onMessage_);
@@ -130,8 +135,8 @@ requires HasSetFdFunction<T> std::pair<bool, std::string> EventServer<T>::StartS
     threadsManager_.emplace_back(std::move(tm));
   }
 
-  if (Main(true) != static_cast<int>(NetListen::OK)) {
-    return std::pair(false, "Main function error");
+  if (StartThreadManager(true) != static_cast<int>(NetListen::OK)) {
+    return std::pair(false, "StartThreadManager function error");
   }
 
   return std::pair(true, "");
@@ -142,30 +147,30 @@ requires HasSetFdFunction<T> std::pair<bool, std::string> EventServer<T>::StartC
   if (threadNum_ <= 0) {
     return std::pair(false, "thread num must be greater than 0");
   }
-
+  if (!onInit_) {
+    return std::pair(false, "OnInit must be set");
+  }
   if (!onConnect_) {
     return std::pair(false, "OnConnect must be set");
   }
-
   if (!onMessage_) {
     return std::pair(false, "OnMessage must be set");
   }
-
   if (!onClose_) {
     return std::pair(false, "OnClose must be set");
   }
 
   for (int8_t i = 0; i < threadNum_; ++i) {
     auto tm = std::make_unique<ThreadManager<T>>(i, rwSeparation_);
-    //    tm->SetOnCreate(onCreate_);
+    tm->SetOnInit(onInit_);
     tm->SetOnConnect(onConnect_);
     tm->SetOnMessage(onMessage_);
     tm->SetOnClose(onClose_);
     threadsManager_.emplace_back(std::move(tm));
   }
 
-  if (Main(false) != static_cast<int>(NetListen::OK)) {
-    return std::pair(false, "Main function error");
+  if (StartThreadManager(false) != static_cast<int>(NetListen::OK)) {
+    return std::pair(false, "StartThreadManager function error");
   }
 
   return std::pair(true, "");
@@ -199,7 +204,7 @@ template <typename T>
 requires HasSetFdFunction<T>
 void EventServer<T>::CloseConnection(const T &conn) {
   int thIndex;
-  int connId = 0;
+  int connId;
   if constexpr (IsPointer_v<T>) {
     thIndex = conn->GetThreadIndex();
     connId = conn->GetConnId();
@@ -238,7 +243,7 @@ void EventServer<T>::TCPConnect(const SocketAddr &addr, const std::function<void
 
 template <typename T>
 requires HasSetFdFunction<T>
-int EventServer<T>::Main(bool serverMode) {
+int EventServer<T>::StartThreadManager(bool serverMode) {
   std::shared_ptr<ListenSocket> listen(ListenSocket::CreateTCPListen());
   if (serverMode) {
     listen->SetListenAddr(listenAddrs_);
