@@ -28,24 +28,6 @@ struct IsPointer<std::unique_ptr<T>> : std::true_type {};
 template <typename T>
 constexpr bool IsPointer_v = IsPointer<T>::value;
 
-// 初始化原生指针的特化模板
-template <typename T>
-void InitPointer(T *&t) {
-  t = new T();
-}
-
-// 初始化 std::shared_ptr 的特化模板
-template <typename T>
-void InitPointer(std::shared_ptr<T> &t) {
-  t = std::make_shared<T>();
-}
-
-// 初始化 std::unique_ptr 的特化模板
-template <typename T>
-void InitPointer(std::unique_ptr<T> &t) {
-  t = std::make_unique<T>();
-}
-
 template <typename T>
 concept HasSetFdFunction = requires(T t, uint64_t id, int8_t index) {
   // If T is of pointer type, then dereference and call the member function
@@ -58,7 +40,11 @@ concept HasSetFdFunction = requires(T t, uint64_t id, int8_t index) {
 
 template <typename T>
 requires HasSetFdFunction<T>
-using OnCreate = std::function<void(uint64_t, T *, const SocketAddr &)>;
+using OnInit = std::function<void(T *)>;
+
+template <typename T>
+requires HasSetFdFunction<T>
+using OnCreate = std::function<void(uint64_t, T &, const SocketAddr &)>;
 
 template <typename T>
 requires HasSetFdFunction<T>

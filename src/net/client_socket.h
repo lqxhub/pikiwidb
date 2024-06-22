@@ -21,14 +21,9 @@ class ClientSocket : public StreamSocket {
 
   inline void SetFailCallback(const std::function<void(std::string)>& cb) { onConnectFail_ = cb; }
 
-  //  inline void SetOnCreate(std::function<void(int fd, const std::shared_ptr<Connection>)> &onCreate) {
-  //    onCreate_ = std::move(onCreate);
-  //  }
-
  private:
   SocketAddr addr_;
   std::function<void(std::string)> onConnectFail_;
-  std::function<void(int fd, const std::shared_ptr<Connection>)> onCreate_;
 };
 
 }  // namespace net

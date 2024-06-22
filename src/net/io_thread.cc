@@ -10,13 +10,11 @@
 namespace net {
 
 void IOThread::Stop() {
-  if (!running_.load()) {
-    return;
+  bool run = true;
+  if (running_.compare_exchange_strong(run, false)) {
+    baseEvent_->Close();
+    Wait();
   }
-
-  running_ = false;
-  baseEvent_->Close();
-  Wait();
 }
 
 void IOThread::Wait() {

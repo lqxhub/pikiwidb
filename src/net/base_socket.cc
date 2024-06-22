@@ -39,15 +39,13 @@ void BaseSocket::SetNonBlock(bool noBlock) {
   if (-1 == flag) {
     return;
   }
-
   if (noBlock) {
-    if (::fcntl(Fd(), F_SETFL, flag | O_NONBLOCK) != -1) {
-      noBlock_ = true;
-    }
+    flag |= O_NONBLOCK;
   } else {
-    if (::fcntl(Fd(), F_SETFL, flag & ~O_NONBLOCK) != -1) {
-      noBlock_ = false;
-    }
+    flag &= ~O_NONBLOCK;
+  }
+  if (::fcntl(Fd(), F_SETFL, flag) != -1) {
+    noBlock_ = noBlock;
   }
 }
 
@@ -80,11 +78,9 @@ bool BaseSocket::GetLocalAddr(SocketAddr &addr) {
 
   if (0 == ::getsockname(Fd(), reinterpret_cast<struct sockaddr *>(&localAddr), &len)) {
     addr.Init(localAddr);
-  } else {
-    return false;
+    return true;
   }
-
-  return true;
+  return false;
 }
 
 bool BaseSocket::GetPeerAddr(SocketAddr &addr) {
@@ -92,11 +88,9 @@ bool BaseSocket::GetPeerAddr(SocketAddr &addr) {
   socklen_t len = sizeof(remoteAddr);
   if (0 == ::getpeername(Fd(), reinterpret_cast<struct sockaddr *>(&remoteAddr), &len)) {
     addr.Init(remoteAddr);
-  } else {
-    return false;
+    return true;
   }
-
-  return true;
+  return false;
 }
 
 }  // namespace net

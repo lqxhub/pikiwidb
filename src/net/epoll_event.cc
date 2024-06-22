@@ -26,7 +26,10 @@ bool EpollEvent::Init() {
   if (mode_ & EVENT_MODE_READ) {  // Add the listen socket to epoll for read
     AddEvent(listen_->Fd(), listen_->Fd(), EVENT_READ | EVENT_ERROR | EVENT_HUB);
   }
-  pipe(pipeFd_);
+  if (pipe(pipeFd_) == -1) {
+    return false;
+  }
+
   AddEvent(pipeFd_[0], pipeFd_[0], EVENT_READ | EVENT_ERROR | EVENT_HUB);
 
   return true;
@@ -50,15 +53,12 @@ void EpollEvent::EventPoll() {
 }
 
 void EpollEvent::AddWriteEvent(uint64_t id, int fd) {
+  struct epoll_event ev {};
+  ev.events = EVENT_WRITE;
+  ev.data.u64 = id;
   if (mode_ & EVENT_MODE_READ) {  // If it is a read multiplex, modify the event
-    struct epoll_event ev {};
-    ev.events = EVENT_WRITE;
-    ev.data.u64 = id;
     epoll_ctl(EvFd(), EPOLL_CTL_MOD, fd, &ev);
   } else {  // If it is a write multiplex, add the event
-    struct epoll_event ev {};
-    ev.events = EVENT_WRITE;
-    ev.data.u64 = id;
     epoll_ctl(EvFd(), EPOLL_CTL_ADD, fd, &ev);
   }
 }
@@ -80,7 +80,7 @@ void EpollEvent::EventRead() {
   if (timer_) {
     waitInterval = static_cast<int>(timer_->Interval());
   }
-  while (running_) {
+  while (running_.load()) {
     int nfds = epoll_wait(EvFd(), events, eventsSize, waitInterval);
     for (int i = 0; i < nfds; ++i) {
       if ((events[i].events & EVENT_HUB) || (events[i].events & EVENT_ERROR)) {
@@ -115,7 +115,7 @@ void EpollEvent::EventRead() {
 
 void EpollEvent::EventWrite() {
   struct epoll_event events[eventsSize];
-  while (running_) {
+  while (running_.load()) {
     int nfds = epoll_wait(EvFd(), events, eventsSize, -1);
     for (int i = 0; i < nfds; ++i) {
       if ((events[i].events & EVENT_HUB) || (events[i].events & EVENT_ERROR)) {

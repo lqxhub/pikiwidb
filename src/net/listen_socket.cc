@@ -79,7 +79,6 @@ bool ListenSocket::Bind() {
     return false;
   }
 
-  fd_ = CreateTCPSocket();
   SetNonBlock(true);
   SetNodelay();
   SetReuseAddr();

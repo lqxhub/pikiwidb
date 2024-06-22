@@ -24,7 +24,10 @@ bool KqueueEvent::Init() {
   if (mode_ & EVENT_MODE_READ) {
     AddEvent(0, listen_->Fd(), EVENT_READ);
   }
-  pipe(pipeFd_);
+  if (pipe(pipeFd_) == -1) {
+    return false;
+  }
+
   AddEvent(0, pipeFd_[0], EVENT_READ | EVENT_ERROR | EVENT_HUB);
   return true;
 }
