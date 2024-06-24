@@ -17,10 +17,10 @@ bool ClientSocket::Connect() {
     onConnectFail_("CreateTCPSocket open socket failed");
     return false;
   }
-  SetNonBlock(fd_);
+  SetNonBlock(true);
   SetNodelay();
-  SetRcvBuf(fd_);
-  SetSndBuf(fd_);
+  SetRcvBuf();
+  SetSndBuf();
 
   auto ret = connect(Fd(), (sockaddr*)&addr_.GetAddr(), sizeof(sockaddr_in));
   if (0 != ret) {
@@ -30,6 +30,7 @@ bool ClientSocket::Connect() {
 
     std::ostringstream oss;
     oss << "IP:" << addr_.GetIP() << " port:" << addr_.GetPort() << " connect failed";
+    Close();
     onConnectFail_(oss.str());
     return false;
   }
