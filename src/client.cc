@@ -453,7 +453,7 @@ std::string PClient::PeerIP() const {
 
 int PClient::PeerPort() const {
   if (!addr_.IsValid()) {
-    return -1;
+    return 0;
   }
   return addr_.GetPort();
 }

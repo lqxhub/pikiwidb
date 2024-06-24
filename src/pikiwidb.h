@@ -36,7 +36,7 @@ class PikiwiDB final {
   //  void Recycle();
   void Stop();
 
-  static void OnNewConnection(uint64_t connId, std::shared_ptr<pikiwidb::PClient> client, const net::SocketAddr& addr);
+  static void OnNewConnection(uint64_t connId, std::shared_ptr<pikiwidb::PClient>& client, const net::SocketAddr& addr);
 
   //  pikiwidb::CmdTableManager& GetCmdTableManager();
   uint32_t GetCmdID() { return ++cmd_id_; };
@@ -61,7 +61,7 @@ class PikiwiDB final {
 
   void TCPConnect(
       const net::SocketAddr& addr,
-      const std::function<void(uint64_t, std::shared_ptr<pikiwidb::PClient>, const net::SocketAddr&)>& onConnect,
+      const std::function<void(uint64_t, std::shared_ptr<pikiwidb::PClient>&, const net::SocketAddr&)>& onConnect,
       const std::function<void(std::string)>& cb);
 
  public:

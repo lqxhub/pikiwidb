@@ -28,7 +28,7 @@ bool KqueueEvent::Init() {
     return false;
   }
 
-  AddEvent(0, pipeFd_[0], EVENT_READ | EVENT_ERROR | EVENT_HUB);
+  AddEvent(0, pipeFd_[0], EVENT_READ);
   return true;
 }
 
@@ -40,7 +40,9 @@ void KqueueEvent::AddEvent(uint64_t id, int fd, int mask) {
 
 void KqueueEvent::DelEvent(int fd) {
   struct kevent change;
-  EV_SET(&change, fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
+  EV_SET(&change, fd, EVENT_READ, EV_DELETE, 0, 0, nullptr);
+  kevent(EvFd(), &change, 1, nullptr, 0, nullptr);
+  EV_SET(&change, fd, EVENT_WRITE, EV_DELETE, 0, 0, nullptr);
   kevent(EvFd(), &change, 1, nullptr, 0, nullptr);
 }
 
