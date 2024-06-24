@@ -103,7 +103,7 @@ bool PikiwiDB::ParseArgs(int ac, char* av[]) {
   return true;
 }
 
-void PikiwiDB::OnNewConnection(uint64_t connId, std::shared_ptr<pikiwidb::PClient> client,
+void PikiwiDB::OnNewConnection(uint64_t connId, std::shared_ptr<pikiwidb::PClient>& client,
                                const net::SocketAddr& addr) {
   INFO("New connection from {}:{}", addr.GetIP(), addr.GetPort());
   client->SetSocketAddr(addr);
@@ -198,7 +198,7 @@ void PikiwiDB::Stop() {
 
 void PikiwiDB::TCPConnect(
     const net::SocketAddr& addr,
-    const std::function<void(uint64_t, std::shared_ptr<pikiwidb::PClient>, const net::SocketAddr&)>& onConnect,
+    const std::function<void(uint64_t, std::shared_ptr<pikiwidb::PClient>&, const net::SocketAddr&)>& onConnect,
     const std::function<void(std::string)>& cb) {
   INFO("Connect to {}:{}", addr.GetIP(), addr.GetPort());
   event_server_->TCPConnect(addr, onConnect, cb);

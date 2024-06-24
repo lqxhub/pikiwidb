@@ -75,7 +75,7 @@ bool ListenSocket::Open() {
 }
 
 bool ListenSocket::Bind() {
-  if (Fd() == 0) {
+  if (Fd() <= 0) {
     return false;
   }
 
@@ -83,7 +83,7 @@ bool ListenSocket::Bind() {
   SetNodelay();
   SetReuseAddr();
   if (!SetReusePort()) {
-    REUSE_PORT = true;
+    REUSE_PORT = false;
   }
 
   struct sockaddr_in serv = addr_.GetAddr();

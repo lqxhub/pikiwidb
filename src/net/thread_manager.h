@@ -159,7 +159,7 @@ void ThreadManager<T>::OnNetEventCreate(int fd, const std::shared_ptr<Connection
     std::lock_guard lock(mutex_);
     connections_.emplace(connId, std::make_pair(t, conn));
   }
-  readThread_->AddNewEvent(connId, fd, BaseEvent::EVENT_READ | BaseEvent::EVENT_ERROR | BaseEvent::EVENT_HUB);
+  readThread_->AddNewEvent(connId, fd, BaseEvent::EVENT_READ);
 
   onCreate_(connId, t, conn->addr_);
 }

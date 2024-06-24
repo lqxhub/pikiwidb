@@ -24,13 +24,13 @@ bool EpollEvent::Init() {
     return false;
   }
   if (mode_ & EVENT_MODE_READ) {  // Add the listen socket to epoll for read
-    AddEvent(listen_->Fd(), listen_->Fd(), EVENT_READ | EVENT_ERROR | EVENT_HUB);
+    AddEvent(listen_->Fd(), listen_->Fd(), EVENT_READ);
   }
   if (pipe(pipeFd_) == -1) {
     return false;
   }
 
-  AddEvent(pipeFd_[0], pipeFd_[0], EVENT_READ | EVENT_ERROR | EVENT_HUB);
+  AddEvent(pipeFd_[0], pipeFd_[0], EVENT_READ);
 
   return true;
 }
@@ -57,6 +57,7 @@ void EpollEvent::AddWriteEvent(uint64_t id, int fd) {
   ev.events = EVENT_WRITE;
   ev.data.u64 = id;
   if (mode_ & EVENT_MODE_READ) {  // If it is a read multiplex, modify the event
+    ev.events |= EVENT_READ;
     epoll_ctl(EvFd(), EPOLL_CTL_MOD, fd, &ev);
   } else {  // If it is a write multiplex, add the event
     epoll_ctl(EvFd(), EPOLL_CTL_ADD, fd, &ev);
