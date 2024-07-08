@@ -196,8 +196,8 @@ void ThreadManager<T>::OnNetEventClose(uint64_t connId, std::string &&err) {
   }
 
   iter->second.second->netEvent_->Close();  // close socket
-  connections_.erase(iter);
   onClose_(iter->second.first, std::move(err));
+  connections_.erase(iter);
 }
 
 template <typename T>
