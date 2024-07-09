@@ -90,6 +90,7 @@ bool ListenSocket::Bind() {
 
   int ret = ::bind(Fd(), reinterpret_cast<struct sockaddr *>(&serv), sizeof serv);
   if (0 != ret) {
+    fprintf(stderr, "Err: %s\n", strerror(errno));
     Close();
     return false;
   }
