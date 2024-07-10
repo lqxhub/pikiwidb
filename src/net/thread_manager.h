@@ -344,7 +344,7 @@ requires HasSetFdFunction<T> uint64_t ThreadManager<T>::DoTCPConnect(T &t, int f
     connections_.emplace(connId, std::make_pair(t, conn));
   }
 
-  readThread_->AddNewEvent(connId, fd, BaseEvent::EVENT_READ | BaseEvent::EVENT_ERROR | BaseEvent::EVENT_HUB);
+  readThread_->AddNewEvent(connId, fd, BaseEvent::EVENT_READ);
   return connId;
 }
 

@@ -138,10 +138,6 @@ bool PikiwiDB::Init() {
   PSlowLog::Instance().SetThreshold(g_config.slow_log_time.load());
   PSlowLog::Instance().SetLogLimit(static_cast<std::size_t>(g_config.slow_log_max_len.load()));
 
-  // init base loop
-  auto loop = worker_threads_.BaseLoop();
-  loop->ScheduleRepeatedly(1000, &PReplication::Cron, &PREPL);
-
   // master ip
   if (!g_config.master_ip.empty()) {
     PREPL.SetMasterAddr(g_config.master_ip.ToString().c_str(), g_config.master_port.load());
