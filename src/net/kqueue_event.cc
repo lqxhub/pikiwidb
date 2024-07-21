@@ -53,11 +53,11 @@ void KqueueEvent::DelEvent(int fd) {
   struct kevent change;
   EV_SET(&change, fd, EVENT_READ, EV_DELETE, 0, 0, nullptr);
   if (kevent(EvFd(), &change, 1, nullptr, 0, nullptr) == -1) {
-    ERROR("KqueueEvent Del read Event id:{},EvFd:{}，fd:{}, kevent error:{}", id, EvFd(), fd, errno);
+    ERROR("KqueueEvent Del read Event EvFd:{}，fd:{}, kevent error:{}", EvFd(), fd, errno);
   }
   EV_SET(&change, fd, EVENT_WRITE, EV_DELETE, 0, 0, nullptr);
   if (kevent(EvFd(), &change, 1, nullptr, 0, nullptr) == -1) {
-    ERROR("KqueueEvent Del write Event id:{},EvFd:{}，fd:{}, kevent error:{}", id, EvFd(), fd, errno);
+    ERROR("KqueueEvent Del write Event EvFd:{}，fd:{}, kevent error:{}", EvFd(), fd, errno);
   }
 }
 
