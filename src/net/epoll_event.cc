@@ -10,6 +10,7 @@
 #ifdef HAVE_EPOLL
 
 #  include "callback_function.h"
+#  include "log.h"
 
 namespace net {
 
@@ -21,12 +22,14 @@ const int BaseEvent::EVENT_HUB = EPOLLHUP;
 bool EpollEvent::Init() {
   evFd_ = epoll_create1(0);
   if (evFd_ == -1) {  // If the epoll creation fails, return false
+    ERROR("epoll_create1 error errno:{}", errno);
     return false;
   }
   if (mode_ & EVENT_MODE_READ) {  // Add the listen socket to epoll for read
     AddEvent(listen_->Fd(), listen_->Fd(), EVENT_READ);
   }
   if (pipe(pipeFd_) == -1) {
+    ERROR("pipe error errno:{}", errno);
     return false;
   }
 
@@ -39,7 +42,9 @@ void EpollEvent::AddEvent(uint64_t id, int fd, int mask) {
   struct epoll_event ev {};
   ev.events = mask;
   ev.data.u64 = id;
-  epoll_ctl(EvFd(), EPOLL_CTL_ADD, fd, &ev);
+  if (epoll_ctl(EvFd(), EPOLL_CTL_ADD, fd, &ev) == -1) {
+    ERROR("AddEvent id:{},EvFd:{},fd:{}, epoll AddEvent error errno:{}", id, EvFd(), fd, errno);
+  }
 }
 
 void EpollEvent::DelEvent(int fd) { epoll_ctl(EvFd(), EPOLL_CTL_DEL, fd, nullptr); }
@@ -58,9 +63,13 @@ void EpollEvent::AddWriteEvent(uint64_t id, int fd) {
   ev.data.u64 = id;
   if (mode_ & EVENT_MODE_READ) {  // If it is a read multiplex, modify the event
     ev.events |= EVENT_READ;
-    epoll_ctl(EvFd(), EPOLL_CTL_MOD, fd, &ev);
+    if (epoll_ctl(EvFd(), EPOLL_CTL_MOD, fd, &ev) == -1) {
+      ERROR("AddWriteEvent id:{},EvFd:{},fd:{}, epoll add RW error errno:{}", id, EvFd(), fd, errno);
+    }
   } else {  // If it is a write multiplex, add the event
-    epoll_ctl(EvFd(), EPOLL_CTL_ADD, fd, &ev);
+    if (epoll_ctl(EvFd(), EPOLL_CTL_ADD, fd, &ev) == -1) {
+      ERROR("AddWriteEvent id:{},EvFd:{},fd:{}, epoll add W error errno:{}", id, EvFd(), fd, errno);
+    }
   }
 }
 
@@ -69,9 +78,13 @@ void EpollEvent::DelWriteEvent(uint64_t id, int fd) {
     struct epoll_event ev {};
     ev.events = EVENT_READ;
     ev.data.u64 = id;
-    epoll_ctl(EvFd(), EPOLL_CTL_MOD, fd, &ev);
+    if (epoll_ctl(EvFd(), EPOLL_CTL_MOD, fd, &ev) == -1) {
+      ERROR("DelWriteEvent id:{},EvFd:{},fd:{}, EPOLL_CTL_MOD error errno:{}", id, EvFd(), fd, errno);
+    }
   } else {
-    epoll_ctl(EvFd(), EPOLL_CTL_DEL, fd, nullptr);
+    if (epoll_ctl(EvFd(), EPOLL_CTL_DEL, fd, nullptr) == -1) {
+      ERROR("DelWriteEvent id:{},EvFd:{},fd:{}, EPOLL_CTL_DEL error errno:{}", id, EvFd(), fd, errno);
+    }
   }
 }
 

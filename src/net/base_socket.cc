@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "base_socket.h"
+#include "log.h"
 
 namespace net {
 
@@ -46,30 +47,44 @@ void BaseSocket::SetNonBlock(bool noBlock) {
   }
   if (::fcntl(Fd(), F_SETFL, flag) != -1) {
     noBlock_ = noBlock;
+  } else {
+    ERROR("SetNonBlock fd:{}, flag:{} error:{}", Fd(), flag, errno);
   }
 }
 
 void BaseSocket::SetNodelay() {
   int nodelay = 1;
-  ::setsockopt(Fd(), IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char *>(&nodelay), sizeof(int));
+  if (::setsockopt(Fd(), IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char *>(&nodelay), sizeof(int)) == -1) {
+    WARN("SetNodelay fd:{} error:{}", Fd(), errno);
+  }
 }
 
 void BaseSocket::SetSndBuf(socklen_t winsize) {
-  ::setsockopt(Fd(), SOL_SOCKET, SO_SNDBUF, reinterpret_cast<const char *>(&winsize), sizeof(winsize));
+  if (::setsockopt(Fd(), SOL_SOCKET, SO_SNDBUF, reinterpret_cast<const char *>(&winsize), sizeof(winsize)) == -1) {
+    WARN("SetSndBuf fd:{} error:{}", Fd(), errno);
+  }
 }
 
 void BaseSocket::SetRcvBuf(socklen_t winsize) {
-  ::setsockopt(Fd(), SOL_SOCKET, SO_RCVBUF, reinterpret_cast<const char *>(&winsize), sizeof(winsize));
+  if (::setsockopt(Fd(), SOL_SOCKET, SO_RCVBUF, reinterpret_cast<const char *>(&winsize), sizeof(winsize)) == -1) {
+    WARN("SetRcvBuf fd:{} error:{}", Fd(), errno);
+  }
 }
 
 void BaseSocket::SetReuseAddr() {
   int reuse = 1;
-  ::setsockopt(Fd(), SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char *>(&reuse), sizeof(reuse));
+  if (::setsockopt(Fd(), SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char *>(&reuse), sizeof(reuse)) == -1) {
+    WARN("SetReuseAddr fd:{} error:{}", Fd(), errno);
+  }
 }
 
 bool BaseSocket::SetReusePort() {
   int reuse = 1;
-  return ::setsockopt(Fd(), SOL_SOCKET, SO_REUSEPORT, reinterpret_cast<const char *>(&reuse), sizeof(reuse)) != -1;
+  if (::setsockopt(Fd(), SOL_SOCKET, SO_REUSEPORT, reinterpret_cast<const char *>(&reuse), sizeof(reuse)) != -1) {
+    return true;
+  }
+  WARN("SetReusePort fd:{} error:{}", Fd(), errno);
+  return false;
 }
 
 bool BaseSocket::GetLocalAddr(SocketAddr &addr) {

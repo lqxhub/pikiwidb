@@ -9,6 +9,7 @@
 
 #include "config.h"
 #include "listen_socket.h"
+#include "log.h"
 #include "stream_socket.h"
 
 namespace net {
@@ -21,6 +22,7 @@ int ListenSocket::OnReadable(const std::shared_ptr<Connection> &conn, std::strin
   struct sockaddr_in clientAddr {};
   auto newConnFd = Accept(&clientAddr);
   if (newConnFd == 0) {
+    ERROR("ListenSocket fd:{},Accept error:{}", Fd(), errno);
     return NE_ERROR;
   }
 
@@ -61,6 +63,7 @@ bool ListenSocket::Open() {
   }
 
   if (!addr_.IsValid()) {
+    ERROR("ListenSocket addr IP:{}, PORT:{} is invalid", addr_.GetIP(), addr_.GetPort());
     return false;
   }
 
@@ -90,7 +93,7 @@ bool ListenSocket::Bind() {
 
   int ret = ::bind(Fd(), reinterpret_cast<struct sockaddr *>(&serv), sizeof serv);
   if (0 != ret) {
-    fprintf(stderr, "Err: %s\n", strerror(errno));
+    ERROR("ListenSocket fd:{},Bind error:{}", Fd(), errno);
     Close();
     return false;
   }
@@ -100,6 +103,7 @@ bool ListenSocket::Bind() {
 bool ListenSocket::Listen() {
   int ret = ::listen(Fd(), ListenSocket::LISTENQ);
   if (0 != ret) {
+    ERROR("ListenSocket fd:{},Listen error:{}", Fd(), errno);
     Close();
     return false;
   }

@@ -6,6 +6,7 @@
  */
 
 #include "stream_socket.h"
+#include "log.h"
 
 namespace net {
 
@@ -19,6 +20,7 @@ int StreamSocket::OnWritable() {
     if (EAGAIN == errno || EWOULDBLOCK == errno) {
       return NE_OK;
     }
+    ERROR("StreamSocket fd: {} write error: {}", Fd(), errno);
     return NE_ERROR;
   }
   sendPos_ += ret;
@@ -45,6 +47,7 @@ int StreamSocket::Read(std::string *readBuff) {
       if (EAGAIN == errno || EWOULDBLOCK == errno || ECONNRESET == errno) {
         return NE_OK;
       } else {
+        ERROR("StreamSocket fd: {} read error: {}", Fd(), errno);
         return NE_ERROR;
       }
     } else if (ret == 0) {

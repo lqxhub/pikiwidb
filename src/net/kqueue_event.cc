@@ -8,6 +8,7 @@
 #include "kqueue_event.h"
 
 #ifdef HAVE_KQUEUE
+#  include "log.h"
 
 namespace net {
 
@@ -19,12 +20,14 @@ const int BaseEvent::EVENT_HUB = EV_EOF;
 bool KqueueEvent::Init() {
   evFd_ = kqueue();
   if (evFd_ == -1) {
+    ERROR("kqueue error:{}", errno);
     return false;
   }
   if (mode_ & EVENT_MODE_READ) {
     AddEvent(0, listen_->Fd(), EVENT_READ);
   }
   if (pipe(pipeFd_) == -1) {
+    ERROR("pipe error:{}", errno);
     return false;
   }
 
@@ -41,15 +44,21 @@ void KqueueEvent::AddEvent(uint64_t id, int fd, int mask) {
   *udata = id;
 #  endif
   EV_SET(&change, fd, mask, EV_ADD, 0, 0, reinterpret_cast<void *>(udata));
-  kevent(EvFd(), &change, 1, nullptr, 0, nullptr);
+  if (kevent(EvFd(), &change, 1, nullptr, 0, nullptr) == -1) {
+    ERROR("KqueueEvent AddEvent id:{},EvFd:{}，fd:{}, kevent error:{}", id, EvFd(), fd, errno);
+  }
 }
 
 void KqueueEvent::DelEvent(int fd) {
   struct kevent change;
   EV_SET(&change, fd, EVENT_READ, EV_DELETE, 0, 0, nullptr);
-  kevent(EvFd(), &change, 1, nullptr, 0, nullptr);
+  if (kevent(EvFd(), &change, 1, nullptr, 0, nullptr) == -1) {
+    ERROR("KqueueEvent Del read Event id:{},EvFd:{}，fd:{}, kevent error:{}", id, EvFd(), fd, errno);
+  }
   EV_SET(&change, fd, EVENT_WRITE, EV_DELETE, 0, 0, nullptr);
-  kevent(EvFd(), &change, 1, nullptr, 0, nullptr);
+  if (kevent(EvFd(), &change, 1, nullptr, 0, nullptr) == -1) {
+    ERROR("KqueueEvent Del write Event id:{},EvFd:{}，fd:{}, kevent error:{}", id, EvFd(), fd, errno);
+  }
 }
 
 void KqueueEvent::AddWriteEvent(uint64_t id, int fd) { AddEvent(id, fd, EVENT_WRITE); }
@@ -57,7 +66,9 @@ void KqueueEvent::AddWriteEvent(uint64_t id, int fd) { AddEvent(id, fd, EVENT_WR
 void KqueueEvent::DelWriteEvent(uint64_t id, int fd) {
   struct kevent change;
   EV_SET(&change, fd, EVENT_WRITE, EV_DELETE, 0, 0, nullptr);
-  kevent(EvFd(), &change, 1, nullptr, 0, nullptr);
+  if (kevent(EvFd(), &change, 1, nullptr, 0, nullptr) == -1) {
+    ERROR("KqueueEvent Del write Event id:{},EvFd:{}，fd:{}, kevent error:{}", id, EvFd(), fd, errno);
+  }
 }
 
 void KqueueEvent::EventPoll() {

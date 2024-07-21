@@ -14,9 +14,8 @@
 #include <unordered_map>
 
 #include "callback_function.h"
-#include "io_thread.h"
-
 #include "config.h"
+#include "io_thread.h"
 
 #if defined(HAVE_EPOLL)
 
