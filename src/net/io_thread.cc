@@ -32,25 +32,4 @@ bool IOThread::Run() {
   return true;
 }
 
-// bool IOReadThread::Run() {
-//     if (!IOThread::Run()) {
-//         return false;
-//     }
-//     thread_ = std::thread([this] {
-//         baseEvent_->EventPoll();
-//     });
-//
-//     return true;
-// }
-//
-// bool IOWriteThread::Run() {
-//     if (!IOThread::Run()) {
-//         return false;
-//     }
-//     thread_ = std::thread([this] {
-//         baseEvent_->EventPoll();
-//     });
-//     return true;
-// }
-
 }  // namespace net

@@ -10,6 +10,9 @@
 namespace net {
 
 int64_t Timer::AddTask(const std::shared_ptr<ITimerTask>& task) {
+  if (!task) {
+    return -1;
+  }
   std::unique_lock l(lock_);
   int64_t _taskId = TaskId();
   task->SetId(_taskId);
@@ -26,6 +29,9 @@ void Timer::RePushTask() {
 }
 
 void Timer::PopTask(std::shared_ptr<ITimerTask>& task, bool deleted) {
+  if (!task) {
+    return;
+  }
   if (deleted) {
     DelMark(task->Id());
   } else {

@@ -44,8 +44,8 @@ class BaseEvent : public std::enable_shared_from_this<BaseEvent> {
   const static int EVENT_ERROR;
   const static int EVENT_HUB;
 
-  BaseEvent(std::shared_ptr<NetEvent> listen, int8_t mode, int8_t type)
-      : listen_(std::move(listen)), mode_(mode), type_(type){};
+  BaseEvent(const std::shared_ptr<NetEvent> &listen, int8_t mode, int8_t type)
+      : listen_(listen), mode_(mode), type_(type){};
 
   virtual ~BaseEvent() = default;
 

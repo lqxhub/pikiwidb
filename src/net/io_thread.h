@@ -45,24 +45,4 @@ class IOThread {
   std::shared_ptr<BaseEvent> baseEvent_;  // Event object
 };
 
-// For now, there is no need to distinguish between read and write threads
-
-// class IOReadThread : public IOThread {
-// public:
-//     IOReadThread(const std::shared_ptr<BaseEvent> &event) : IOThread(event) {};
-//
-//     ~IOReadThread() override = default;
-//
-//     bool Run() override;
-// };
-//
-// class IOWriteThread : public IOThread {
-// public:
-//     IOWriteThread(const std::shared_ptr<BaseEvent> &event) : IOThread(event) {};
-//
-//     ~IOWriteThread() override = default;
-//
-//     bool Run() override;
-// };
-
 }  // namespace net

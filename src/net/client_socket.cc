@@ -29,7 +29,7 @@ bool ClientSocket::Connect() {
     }
 
     std::ostringstream oss;
-    oss << "IP:" << addr_.GetIP() << " port:" << addr_.GetPort() << " connect failed";
+    oss << "IP:" << addr_.GetIP() << " port:" << addr_.GetPort() << " connect failed with error: " << strerror(errno);
     Close();
     onConnectFail_(oss.str());
     return false;
