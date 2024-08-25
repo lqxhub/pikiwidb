@@ -51,7 +51,7 @@ class KqueueEvent : public BaseEvent {
   void DoError(const struct kevent &event, std::string &&err);
 
  private:
-  const int eventsSize = 1020;
+  const int eventsSize = 1024;
 };
 
 }  // namespace net
