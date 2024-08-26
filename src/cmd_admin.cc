@@ -644,4 +644,14 @@ void SortCmd::InitialArgument() {
   get_patterns_.clear();
   ret_.clear();
 }
+MonitorCmd::MonitorCmd(const std::string& name, int arity)
+    : BaseCmd(name, arity, kCmdFlagsReadonly | kCmdFlagsAdmin, kAclCategoryAdmin) {}
+
+bool MonitorCmd::DoInitial(PClient* client) { return true; }
+
+void MonitorCmd::DoCmd(PClient* client) {
+  client->AddToMonitor();
+  client->SetRes(CmdRes::kOK);
+}
+
 }  // namespace pikiwidb

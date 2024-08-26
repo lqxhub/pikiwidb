@@ -23,6 +23,7 @@ const std::vector<std::string> debugHelps = {"DEBUG <subcommand> [<arg> [value] 
                                              "    Crash the server simulating an out-of-memory error."};
 
 namespace pikiwidb {
+const std::string kCmdNameMonitor = "monitor";
 
 class CmdConfig : public BaseCmdGroup {
  public:
@@ -205,6 +206,17 @@ class CmdDebugOOM : public BaseCmd {
 class CmdDebugSegfault : public BaseCmd {
  public:
   CmdDebugSegfault(const std::string& name, int16_t arity);
+
+ protected:
+  bool DoInitial(PClient* client) override;
+
+ private:
+  void DoCmd(PClient* client) override;
+};
+
+class MonitorCmd : public BaseCmd {
+ public:
+  MonitorCmd(const std::string& name, int arity);
 
  protected:
   bool DoInitial(PClient* client) override;

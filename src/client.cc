@@ -625,9 +625,9 @@ void PClient::TransferToSlaveThreads() {
   //  }
 }
 
-void PClient::AddCurrentToMonitor() {
+void PClient::AddToMonitor() {
   std::unique_lock<std::mutex> guard(monitors_mutex);
-  monitors.insert(std::static_pointer_cast<PClient>(s_current->shared_from_this()));
+  monitors.insert(weak_from_this());
 }
 
 void PClient::FeedMonitors(const std::vector<std::string>& params) {

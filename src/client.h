@@ -250,8 +250,8 @@ class PClient : public std::enable_shared_from_this<PClient>, public CmdRes {
   void SetSlaveInfo();
   PSlaveInfo* GetSlaveInfo() const { return slave_info_.get(); }
   void TransferToSlaveThreads();
+  void AddToMonitor();
 
-  static void AddCurrentToMonitor();
   static void FeedMonitors(const std::vector<std::string>& params);
 
   void SetAuth() { auth_ = true; }
