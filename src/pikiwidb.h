@@ -63,6 +63,8 @@ class PikiwiDB final {
       const std::function<void(uint64_t, std::shared_ptr<pikiwidb::PClient>&, const net::SocketAddr&)>& onConnect,
       const std::function<void(std::string)>& cb);
 
+  time_t Start_time_s() { return start_time_s_; }
+
  public:
   PString cfg_file_;
   uint16_t port_{0};
@@ -78,6 +80,8 @@ class PikiwiDB final {
 
   std::unique_ptr<net::EventServer<std::shared_ptr<pikiwidb::PClient>>> event_server_;
   uint32_t cmd_id_ = 0;
+
+  time_t start_time_s_ = 0;
 };
 
 extern std::unique_ptr<PikiwiDB> g_pikiwidb;

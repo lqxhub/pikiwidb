@@ -13,6 +13,7 @@
 #include <sys/fcntl.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 #include <iostream>
 #include <thread>
@@ -173,6 +174,8 @@ bool PikiwiDB::Init() {
   auto timerTask = std::make_shared<net::CommonTimerTask>(1000);
   timerTask->SetCallback([]() { PREPL.Cron(); });
   event_server_->AddTimerTask(timerTask);
+
+  time(&start_time_s_);
 
   return true;
 }
