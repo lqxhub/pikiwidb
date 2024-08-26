@@ -38,7 +38,7 @@ Pikiwidb is compiled by default in release mode, which does not support debuggin
 ## Run
 
 ```bash
-bin/pikiwidb etc/conf/pikiwidb.conf
+./bin/pikiwidb ./etc/conf/pikiwidb.conf
 ```
 
 ## Support module for write your own extensions

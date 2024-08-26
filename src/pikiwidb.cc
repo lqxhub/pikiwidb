@@ -1,20 +1,24 @@
-/*
- * Copyright (c) 2023-present, OpenAtom Foundation, Inc.  All rights reserved.
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
- */
+// Copyright (c) 2023-present, OpenAtom Foundation, Inc.  All rights reserved.
+// This source code is licensed under the BSD-style license found in the
+// LICENSE file in the root directory of this source tree. An additional grant
+// of patent rights can be found in the PATENTS file in the same directory
 
-//
-//  PikiwiDB.cc
+/*
+  Stub main() routine for the pikiwidb executable.
+
+  This does some essential startup tasks for pikiwidb, and then dispatches to the proper FooMain() routine for the
+  incarnation.
+ */
 
 #include "pikiwidb.h"
 
+#include <getopt.h>
 #include <sys/fcntl.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
+#include <cstdio>
 #include <iostream>
 #include <thread>
 
@@ -29,9 +33,15 @@
 #include "slow_log.h"
 #include "store.h"
 
+// g_pikiwidb is a global abstraction of the server-side process
 std::unique_ptr<PikiwiDB> g_pikiwidb;
+
 using namespace pikiwidb;
 
+/*
+ * set up a handler to be called if the PikiwiDB crashes
+ * with a fatal signal or exception.
+ */
 static void IntSigHandle(const int sig) {
   INFO("Catch Signal {}, cleanup...", sig);
   g_pikiwidb->Stop();
@@ -48,60 +58,97 @@ static void SignalSetup() {
 const uint32_t PikiwiDB::kRunidSize = 40;
 
 static void Usage() {
-  std::cerr << "Usage:  ./pikiwidb-server [/path/to/redis.conf] [options]\n\
-        ./pikiwidb-server -v or --version\n\
-        ./pikiwidb-server -h or --help\n\
-Examples:\n\
-        ./pikiwidb-server (run the server with default conf)\n\
-        ./pikiwidb-server /etc/redis/6379.conf\n\
-        ./pikiwidb-server --port 7777\n\
-        ./pikiwidb-server --port 7777 --slaveof 127.0.0.1 8888\n\
-        ./pikiwidb-server /etc/myredis.conf --loglevel verbose\n";
+  std::cerr << "pikiwidb is the PikiwiDB server.\n";
+  std::cerr << "\n";
+  std::cerr << "Usage:\n";
+  std::cerr << "  pikiwidb [/path/to/pikiwidb.conf] [options]\n";
+  std::cerr << "\n";
+  std::cerr << "Options:\n";
+  std::cerr << "  -v, --version                  output version information, then exit\n";
+  std::cerr << "  -h, --help                     output help message\n";
+  std::cerr << "  -p PORT, --port PORT           Set the port listen on\n";
+  std::cerr << "  -l LEVEL, --loglevel LEVEL     Set the log level\n";
+  std::cerr << "  -s ADDRESS, --slaveof ADDRESS  Set the slave address\n";
+  std::cerr << "Examples:\n";
+  std::cerr << "  pikiwidb /path/pikiwidb.conf\n";
+  std::cerr << "  pikiwidb /path/pikiwidb.conf --loglevel verbose\n";
+  std::cerr << "  pikiwidb --port 7777\n";
+  std::cerr << "  pikiwidb --port 7777 --slaveof 127.0.0.1:8888\n";
 }
 
-bool PikiwiDB::ParseArgs(int ac, char* av[]) {
-  for (int i = 0; i < ac; i++) {
-    if (cfg_file_.empty() && ::access(av[i], R_OK) == 0) {
-      cfg_file_ = av[i];
-      continue;
-    } else if (strncasecmp(av[i], "-v", 2) == 0 || strncasecmp(av[i], "--version", 9) == 0) {
-      std::cerr << "PikiwiDB Server version: " << KPIKIWIDB_VERSION << " bits=" << (sizeof(void*) == 8 ? 64 : 32)
-                << std::endl;
-      std::cerr << "PikiwiDB Server Build Type: " << KPIKIWIDB_BUILD_TYPE << std::endl;
+// Handle the argc & argv
+bool PikiwiDB::ParseArgs(int argc, char* argv[]) {
+  static struct option long_options[] = {
+      {"version", no_argument, 0, 'v'},       {"help", no_argument, 0, 'h'},
+      {"port", required_argument, 0, 'p'},    {"loglevel", required_argument, 0, 'l'},
+      {"slaveof", required_argument, 0, 's'},
+  };
+  // pikiwidb [/path/to/pikiwidb.conf] [options]
+  if (cfg_file_.empty() && argc > 1 && ::access(argv[1], R_OK) == 0) {
+    cfg_file_ = argv[1];
+    argc = argc - 1;
+    argv = argv + 1;
+  }
+  while (1) {
+    int this_option_optind = optind ? optind : 1;
+    int option_index = 0;
+    int c;
+    c = getopt_long(argc, argv, "vhp:l:s:", long_options, &option_index);
+    if (c == -1) {
+      break;
+    }
+
+    switch (c) {
+      case 'v': {
+        std::cerr << "PikiwiDB Server version: " << KPIKIWIDB_VERSION << " bits=" << (sizeof(void*) == 8 ? 64 : 32)
+                  << std::endl;
+        std::cerr << "PikiwiDB Server Build Type: " << KPIKIWIDB_BUILD_TYPE << std::endl;
 #if defined(KPIKIWIDB_BUILD_DATE)
-      std::cerr << "PikiwiDB Server Build Date: " << KPIKIWIDB_BUILD_DATE << std::endl;
+        std::cerr << "PikiwiDB Server Build Date: " << KPIKIWIDB_BUILD_DATE << std::endl;
 #endif
 #if defined(KPIKIWIDB_GIT_COMMIT_ID)
-      std::cerr << "PikiwiDB Server Build GIT SHA: " << KPIKIWIDB_GIT_COMMIT_ID << std::endl;
+        std::cerr << "PikiwiDB Server Build GIT SHA: " << KPIKIWIDB_GIT_COMMIT_ID << std::endl;
 #endif
 
-      exit(0);
-    } else if (strncasecmp(av[i], "-h", 2) == 0 || strncasecmp(av[i], "--help", 6) == 0) {
-      Usage();
-      exit(0);
-    } else if (strncasecmp(av[i], "--port", 6) == 0) {
-      if (++i == ac) {
-        return false;
+        exit(0);
+        break;
       }
-      port_ = static_cast<uint16_t>(std::atoi(av[i]));
-    } else if (strncasecmp(av[i], "--loglevel", 10) == 0) {
-      if (++i == ac) {
-        return false;
+      case 'h': {
+        Usage();
+        exit(0);
+        break;
       }
-      log_level_ = std::string(av[i]);
-    } else if (strncasecmp(av[i], "--slaveof", 9) == 0) {
-      if (i + 2 >= ac) {
-        return false;
+      case 'p': {
+        port_ = static_cast<uint16_t>(std::atoi(optarg));
+        break;
       }
-
-      master_ = std::string(av[++i]);
-      master_port_ = static_cast<int16_t>(std::atoi(av[++i]));
-    } else {
-      std::cerr << "Unknow option " << av[i] << std::endl;
-      return false;
+      case 'l': {
+        log_level_ = std::string(optarg);
+        break;
+      }
+      case 's': {
+        unsigned int optarg_long = static_cast<unsigned int>(strlen(optarg));
+        char* str = (char*)calloc(optarg_long, sizeof(char*));
+        if (str) {
+          if (sscanf(optarg, "%s:%d", str, &master_port_) != 2) {
+            ERROR("Invalid slaveof format.");
+            free(str);
+            return false;
+          }
+          master_ = str;
+          free(str);
+        } else {
+          ERROR("Memory alloc failed.");
+        }
+        break;
+      }
+      case '?': {
+        std::cerr << "Unknow option " << std::endl;
+        return false;
+        break;
+      }
     }
   }
-
   return true;
 }
 
@@ -244,9 +291,11 @@ static int InitLimit() {
 
 static void daemonize() {
   if (fork()) {
-    exit(0); /* parent exits */
+    // parent exits
+    exit(0);
   }
-  setsid(); /* create a new session */
+  // create a new session
+  setsid();
 }
 
 static void closeStd() {
@@ -260,9 +309,10 @@ static void closeStd() {
   }
 }
 
-int main(int ac, char* av[]) {
+// Any PikiwiDB server process begins execution here.
+int main(int argc, char* argv[]) {
   g_pikiwidb = std::make_unique<PikiwiDB>();
-  if (!g_pikiwidb->ParseArgs(ac - 1, av + 1)) {
+  if (!g_pikiwidb->ParseArgs(argc, argv)) {
     Usage();
     return -1;
   }
@@ -273,12 +323,6 @@ int main(int ac, char* av[]) {
       return -1;
     }
   }
-
-  // output logo to console
-  char logo[512] = "";
-  snprintf(logo, sizeof logo - 1, pikiwidbLogo, KPIKIWIDB_VERSION, static_cast<int>(sizeof(void*)) * 8,
-           static_cast<int>(g_config.port));
-  std::cout << logo;
 
   if (g_config.daemonize.load()) {
     daemonize();
@@ -294,10 +338,15 @@ int main(int ac, char* av[]) {
   }
 
   if (g_pikiwidb->Init()) {
+    // output logo to console
+    char logo[512] = "";
+    snprintf(logo, sizeof logo - 1, pikiwidbLogo, KPIKIWIDB_VERSION, static_cast<int>(sizeof(void*)) * 8,
+             static_cast<int>(g_config.port));
+    std::cout << logo;
     g_pikiwidb->Run();
   }
 
-  // when process exit, flush log
+  // When PikiwiDB exit, flush log
   spdlog::get(logger::Logger::Instance().Name())->flush();
   return 0;
 }

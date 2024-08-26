@@ -38,7 +38,7 @@ PikiwiDB 默认以 release 模式编译，不支持调试。如果需要调试�
 ## 运行
 
 ```bash
-bin/pikiwidb etc/conf/pikiwidb.conf
+./bin/pikiwidb ./etc/conf/pikiwidb.conf
 ```
 
 ## 与 Redis 完全兼容

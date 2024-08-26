@@ -1,8 +1,10 @@
+// Copyright (c) 2023-present, OpenAtom Foundation, Inc.  All rights reserved.
+// This source code is licensed under the BSD-style license found in the
+// LICENSE file in the root directory of this source tree. An additional grant
+// of patent rights can be found in the PATENTS file in the same directory
+
 /*
- * Copyright (c) 2023-present, OpenAtom Foundation, Inc.  All rights reserved.
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+  Responsible for managing the runtime configuration information of PikiwiDB.
  */
 
 #include <string>
@@ -104,22 +106,22 @@ Status NumberValue<T>::SetValue(const std::string& value) {
 PConfig::PConfig() {
   AddBool("daemonize", &CheckYesNo, false, &daemonize);
   AddString("ip", false, {&ip});
-  AddNumberWihLimit<uint16_t>("port", false, &port, PORT_LIMIT_MIN, PORT_LIMIT_MAX);
+  AddNumberWithLimit<uint16_t>("port", false, &port, PORT_LIMIT_MIN, PORT_LIMIT_MAX);
   AddNumber("raft-port-offset", true, &raft_port_offset);
   AddNumber("timeout", true, &timeout);
   AddString("db-path", false, {&db_path});
-  AddStrinWithFunc("loglevel", &CheckLogLevel, false, {&log_level});
+  AddStringWithFunc("loglevel", &CheckLogLevel, false, {&log_level});
   AddString("logfile", false, {&log_dir});
-  AddNumberWihLimit<size_t>("databases", false, &databases, 1, DBNUMBER_MAX);
+  AddNumberWithLimit<size_t>("databases", false, &databases, 1, DBNUMBER_MAX);
   AddString("requirepass", true, {&password});
   AddNumber("maxclients", true, &max_clients);
-  AddNumberWihLimit<uint32_t>("worker-threads", false, &worker_threads_num, 1, THREAD_MAX);
-  AddNumberWihLimit<uint32_t>("slave-threads", false, &worker_threads_num, 1, THREAD_MAX);
+  AddNumberWithLimit<uint32_t>("worker-threads", false, &worker_threads_num, 1, THREAD_MAX);
+  AddNumberWithLimit<uint32_t>("slave-threads", false, &worker_threads_num, 1, THREAD_MAX);
   AddNumber("slowlog-log-slower-than", true, &slow_log_time);
   AddNumber("slowlog-max-len", true, &slow_log_max_len);
-  AddNumberWihLimit<size_t>("db-instance-num", true, &db_instance_num, 1, ROCKSDB_INSTANCE_NUMBER_MAX);
-  AddNumberWihLimit<int32_t>("fast-cmd-threads-num", false, &fast_cmd_threads_num, 1, THREAD_MAX);
-  AddNumberWihLimit<int32_t>("slow-cmd-threads-num", false, &slow_cmd_threads_num, 1, THREAD_MAX);
+  AddNumberWithLimit<size_t>("db-instance-num", true, &db_instance_num, 1, ROCKSDB_INSTANCE_NUMBER_MAX);
+  AddNumberWithLimit<int32_t>("fast-cmd-threads-num", false, &fast_cmd_threads_num, 1, THREAD_MAX);
+  AddNumberWithLimit<int32_t>("slow-cmd-threads-num", false, &slow_cmd_threads_num, 1, THREAD_MAX);
   AddNumber("max-client-response-size", true, &max_client_response_size);
   AddString("runid", false, {&run_id});
   AddNumber("small-compaction-threshold", true, &small_compaction_threshold);
